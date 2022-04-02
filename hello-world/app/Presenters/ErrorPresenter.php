@@ -14,8 +14,7 @@ final class ErrorPresenter implements Nette\Application\IPresenter
 {
 	use Nette\SmartObject;
 
-	/** @var ILogger */
-	private $logger;
+	private ILogger $logger;
 
 
 	public function __construct(ILogger $logger)
@@ -24,21 +23,16 @@ final class ErrorPresenter implements Nette\Application\IPresenter
 	}
 
 
-	/**
-	 * @return Nette\Application\IResponse
-	 */
-	public function run(Nette\Application\Request $request): Nette\Application\IResponse
+	public function run(Nette\Application\Request $request): Nette\Application\Response
 	{
-		$e = $request->getParameter('exception');
+		$exception = $request->getParameter('exception');
 
-		if ($e instanceof Nette\Application\BadRequestException) {
-			// $this->logger->log("HTTP code {$e->getCode()}: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}", 'access');
+		if ($exception instanceof Nette\Application\BadRequestException) {
 			[$module, , $sep] = Nette\Application\Helpers::splitName($request->getPresenterName());
-			$errorPresenter = $module . $sep . 'Error4xx';
-			return new Responses\ForwardResponse($request->setPresenterName($errorPresenter));
+			return new Responses\ForwardResponse($request->setPresenterName($module . $sep . 'Error4xx'));
 		}
 
-		$this->logger->log($e, ILogger::EXCEPTION);
+		$this->logger->log($exception, ILogger::EXCEPTION);
 		return new Responses\CallbackResponse(function (Http\IRequest $httpRequest, Http\IResponse $httpResponse): void {
 			if (preg_match('#^text/html(?:;|$)#', (string) $httpResponse->getHeader('Content-Type'))) {
 				require __DIR__ . '/templates/Error/500.phtml';

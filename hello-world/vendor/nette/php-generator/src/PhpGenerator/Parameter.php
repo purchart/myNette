@@ -10,12 +10,13 @@ declare(strict_types=1);
 namespace Nette\PhpGenerator;
 
 use Nette;
+use Nette\Utils\Type;
 
 
 /**
  * Function/Method parameter description.
  *
- * @property mixed $defaultValue
+ * @property-deprecated mixed $defaultValue
  */
 class Parameter
 {
@@ -23,24 +24,14 @@ class Parameter
 	use Traits\NameAware;
 	use Traits\AttributeAware;
 
-	/** @var bool */
-	private $reference = false;
-
-	/** @var string|null */
-	private $type;
-
-	/** @var bool */
-	private $nullable = false;
-
-	/** @var bool */
-	private $hasDefaultValue = false;
-
-	/** @var mixed */
-	private $defaultValue;
+	private bool $reference = false;
+	private ?string $type = null;
+	private bool $nullable = false;
+	private bool $hasDefaultValue = false;
+	private mixed $defaultValue = null;
 
 
-	/** @return static */
-	public function setReference(bool $state = true): self
+	public function setReference(bool $state = true): static
 	{
 		$this->reference = $state;
 		return $this;
@@ -53,49 +44,38 @@ class Parameter
 	}
 
 
-	/** @return static */
-	public function setType(?string $type): self
+	public function setType(?string $type): static
 	{
-		$this->type = $type;
+		$this->type = Helpers::validateType($type, $this->nullable);
 		return $this;
 	}
 
 
-	public function getType(): ?string
+	public function getType(bool $asObject = false): Type|string|null
 	{
-		return $this->type;
+		return $asObject && $this->type
+			? Type::fromString($this->type)
+			: $this->type;
 	}
 
 
 	/** @deprecated  use setType() */
-	public function setTypeHint(?string $type): self
+	public function setTypeHint(?string $type): static
 	{
-		$this->type = $type;
-		return $this;
+		trigger_error(__METHOD__ . '() is deprecated, use setType().', E_USER_DEPRECATED);
+		return $this->setType($type);
 	}
 
 
 	/** @deprecated  use getType() */
 	public function getTypeHint(): ?string
 	{
-		return $this->type;
+		trigger_error(__METHOD__ . '() is deprecated, use getType().', E_USER_DEPRECATED);
+		return $this->getType();
 	}
 
 
-	/**
-	 * @deprecated  just use setDefaultValue()
-	 * @return static
-	 */
-	public function setOptional(bool $state = true): self
-	{
-		trigger_error(__METHOD__ . '() is deprecated, use setDefaultValue()', E_USER_DEPRECATED);
-		$this->hasDefaultValue = $state;
-		return $this;
-	}
-
-
-	/** @return static */
-	public function setNullable(bool $state = true): self
+	public function setNullable(bool $state = true): static
 	{
 		$this->nullable = $state;
 		return $this;
@@ -108,8 +88,7 @@ class Parameter
 	}
 
 
-	/** @return static */
-	public function setDefaultValue($val): self
+	public function setDefaultValue(mixed $val): static
 	{
 		$this->defaultValue = $val;
 		$this->hasDefaultValue = true;
@@ -117,7 +96,7 @@ class Parameter
 	}
 
 
-	public function getDefaultValue()
+	public function getDefaultValue(): mixed
 	{
 		return $this->defaultValue;
 	}
@@ -126,5 +105,10 @@ class Parameter
 	public function hasDefaultValue(): bool
 	{
 		return $this->hasDefaultValue;
+	}
+
+
+	public function validate(): void
+	{
 	}
 }

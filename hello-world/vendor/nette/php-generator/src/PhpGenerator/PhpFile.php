@@ -26,10 +26,14 @@ final class PhpFile
 	use Traits\CommentAware;
 
 	/** @var PhpNamespace[] */
-	private $namespaces = [];
+	private array $namespaces = [];
+	private bool $strictTypes = false;
 
-	/** @var bool */
-	private $strictTypes = false;
+
+	public static function fromCode(string $code): self
+	{
+		return (new Factory)->fromCode($code);
+	}
 
 
 	public function addClass(string $name): ClassType
@@ -40,7 +44,7 @@ final class PhpFile
 	}
 
 
-	public function addInterface(string $name): ClassType
+	public function addInterface(string $name): InterfaceType
 	{
 		return $this
 			->addNamespace(Helpers::extractNamespace($name))
@@ -48,7 +52,7 @@ final class PhpFile
 	}
 
 
-	public function addTrait(string $name): ClassType
+	public function addTrait(string $name): TraitType
 	{
 		return $this
 			->addNamespace(Helpers::extractNamespace($name))
@@ -56,23 +60,33 @@ final class PhpFile
 	}
 
 
-	/** @param  string|PhpNamespace  $namespace */
-	public function addNamespace($namespace): PhpNamespace
+	public function addEnum(string $name): EnumType
 	{
-		if ($namespace instanceof PhpNamespace) {
-			$res = $this->namespaces[$namespace->getName()] = $namespace;
+		return $this
+			->addNamespace(Helpers::extractNamespace($name))
+			->addEnum(Helpers::extractShortName($name));
+	}
 
-		} elseif (is_string($namespace)) {
-			$res = $this->namespaces[$namespace] = $this->namespaces[$namespace] ?? new PhpNamespace($namespace);
 
-		} else {
-			throw new Nette\InvalidArgumentException('Argument must be string|PhpNamespace.');
-		}
+	public function addNamespace(string|PhpNamespace $namespace): PhpNamespace
+	{
+		$res = $namespace instanceof PhpNamespace
+			? ($this->namespaces[$namespace->getName()] = $namespace)
+			: ($this->namespaces[$namespace] ??= new PhpNamespace($namespace));
 
 		foreach ($this->namespaces as $namespace) {
 			$namespace->setBracketedSyntax(count($this->namespaces) > 1 && isset($this->namespaces['']));
 		}
+
 		return $res;
+	}
+
+
+	public function addFunction(string $name): GlobalFunction
+	{
+		return $this
+			->addNamespace(Helpers::extractNamespace($name))
+			->addFunction(Helpers::extractShortName($name));
 	}
 
 
@@ -83,19 +97,47 @@ final class PhpFile
 	}
 
 
-	/** @return static */
-	public function addUse(string $name, string $alias = null): self
+	/** @return ClassLike[] */
+	public function getClasses(): array
 	{
-		$this->addNamespace('')->addUse($name, $alias);
+		$classes = [];
+		foreach ($this->namespaces as $n => $namespace) {
+			$n .= $n ? '\\' : '';
+			foreach ($namespace->getClasses() as $c => $class) {
+				$classes[$n . $c] = $class;
+			}
+		}
+
+		return $classes;
+	}
+
+
+	/** @return GlobalFunction[] */
+	public function getFunctions(): array
+	{
+		$functions = [];
+		foreach ($this->namespaces as $n => $namespace) {
+			$n .= $n ? '\\' : '';
+			foreach ($namespace->getFunctions() as $f => $function) {
+				$functions[$n . $f] = $function;
+			}
+		}
+
+		return $functions;
+	}
+
+
+	public function addUse(string $name, ?string $alias = null, string $of = PhpNamespace::NameNormal): static
+	{
+		$this->addNamespace('')->addUse($name, $alias, $of);
 		return $this;
 	}
 
 
 	/**
 	 * Adds declare(strict_types=1) to output.
-	 * @return static
 	 */
-	public function setStrictTypes(bool $on = true): self
+	public function setStrictTypes(bool $on = true): static
 	{
 		$this->strictTypes = $on;
 		return $this;
@@ -111,20 +153,13 @@ final class PhpFile
 	/** @deprecated  use hasStrictTypes() */
 	public function getStrictTypes(): bool
 	{
+		trigger_error(__METHOD__ . '() is deprecated, use hasStrictTypes().', E_USER_DEPRECATED);
 		return $this->strictTypes;
 	}
 
 
 	public function __toString(): string
 	{
-		try {
-			return (new Printer)->printFile($this);
-		} catch (\Throwable $e) {
-			if (PHP_VERSION_ID >= 70400) {
-				throw $e;
-			}
-			trigger_error('Exception in ' . __METHOD__ . "(): {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}", E_USER_ERROR);
-			return '';
-		}
+		return (new Printer)->printFile($this);
 	}
 }

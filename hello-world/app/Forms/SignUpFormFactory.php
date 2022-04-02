@@ -13,19 +13,15 @@ final class SignUpFormFactory
 {
 	use Nette\SmartObject;
 
-	private const PASSWORD_MIN_LENGTH = 7;
+	private FormFactory $factory;
 
-	/** @var FormFactory */
-	private $factory;
-
-	/** @var Model\UserManager */
-	private $userManager;
+	private Model\UserFacade $userFacade;
 
 
-	public function __construct(FormFactory $factory, Model\UserManager $userManager)
+	public function __construct(FormFactory $factory, Model\UserFacade $userFacade)
 	{
 		$this->factory = $factory;
-		$this->userManager = $userManager;
+		$this->userFacade = $userFacade;
 	}
 
 
@@ -39,15 +35,15 @@ final class SignUpFormFactory
 			->setRequired('Please enter your e-mail.');
 
 		$form->addPassword('password', 'Create a password:')
-			->setOption('description', sprintf('at least %d characters', self::PASSWORD_MIN_LENGTH))
+			->setOption('description', sprintf('at least %d characters', $this->userFacade::PASSWORD_MIN_LENGTH))
 			->setRequired('Please create a password.')
-			->addRule($form::MIN_LENGTH, null, self::PASSWORD_MIN_LENGTH);
+			->addRule($form::MIN_LENGTH, null, $this->userFacade::PASSWORD_MIN_LENGTH);
 
 		$form->addSubmit('send', 'Sign up');
 
 		$form->onSuccess[] = function (Form $form, \stdClass $values) use ($onSuccess): void {
 			try {
-				$this->userManager->add($values->username, $values->email, $values->password);
+				$this->userFacade->add($values->username, $values->email, $values->password);
 			} catch (Model\DuplicateNameException $e) {
 				$form['username']->addError('Username is already taken.');
 				return;

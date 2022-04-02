@@ -38,9 +38,9 @@ final class MicroPresenter implements Application\IPresenter
 
 
 	public function __construct(
-		Nette\DI\Container $context = null,
-		Http\IRequest $httpRequest = null,
-		Router $router = null
+		?Nette\DI\Container $context = null,
+		?Http\IRequest $httpRequest = null,
+		?Router $router = null
 	) {
 		$this->context = $context;
 		$this->httpRequest = $httpRequest;
@@ -57,7 +57,7 @@ final class MicroPresenter implements Application\IPresenter
 	}
 
 
-	public function run(Application\Request $request): Application\IResponse
+	public function run(Application\Request $request): Application\Response
 	{
 		$this->request = $request;
 
@@ -76,10 +76,11 @@ final class MicroPresenter implements Application\IPresenter
 
 		$params = $request->getParameters();
 		$callback = $params['callback'] ?? null;
-		if (!$callback instanceof \Closure) {
+		if (!is_object($callback) || !is_callable($callback)) {
 			throw new Application\BadRequestException('Parameter callback is not a valid closure.');
 		}
-		$reflection = new \ReflectionFunction($callback);
+
+		$reflection = Nette\Utils\Callback::toReflection($callback);
 
 		if ($this->context) {
 			foreach ($reflection->getParameters() as $param) {
@@ -88,6 +89,7 @@ final class MicroPresenter implements Application\IPresenter
 				}
 			}
 		}
+
 		$params['presenter'] = $this;
 		try {
 			$params = Application\UI\ComponentReflection::combineArgs($reflection, $params);
@@ -100,15 +102,18 @@ final class MicroPresenter implements Application\IPresenter
 		if (is_string($response)) {
 			$response = [$response, []];
 		}
+
 		if (is_array($response)) {
 			[$templateSource, $templateParams] = $response;
 			$response = $this->createTemplate()->setParameters($templateParams);
 			if (!$templateSource instanceof \SplFileInfo) {
 				$response->getLatte()->setLoader(new Latte\Loaders\StringLoader);
 			}
+
 			$response->setFile((string) $templateSource);
 		}
-		if ($response instanceof Application\UI\ITemplate) {
+
+		if ($response instanceof Application\UI\Template) {
 			return new Responses\TextResponse($response);
 		} else {
 			return $response ?: new Responses\VoidResponse;
@@ -119,14 +124,14 @@ final class MicroPresenter implements Application\IPresenter
 	/**
 	 * Template factory.
 	 */
-	public function createTemplate(string $class = null, callable $latteFactory = null): Application\UI\ITemplate
+	public function createTemplate(?string $class = null, ?callable $latteFactory = null): Application\UI\Template
 	{
 		$latte = $latteFactory
 			? $latteFactory()
-			: $this->getContext()->getByType(Nette\Bridges\ApplicationLatte\ILatteFactory::class)->create();
+			: $this->getContext()->getByType(Nette\Bridges\ApplicationLatte\LatteFactory::class)->create();
 		$template = $class
 			? new $class
-			: new Nette\Bridges\ApplicationLatte\Template($latte);
+			: new Nette\Bridges\ApplicationLatte\DefaultTemplate($latte);
 
 		$template->setParameters($this->request->getParameters());
 		$template->presenter = $this;
@@ -136,6 +141,7 @@ final class MicroPresenter implements Application\IPresenter
 			$template->baseUrl = rtrim($url->getBaseUrl(), '/');
 			$template->basePath = rtrim($url->getBasePath(), '/');
 		}
+
 		return $template;
 	}
 
