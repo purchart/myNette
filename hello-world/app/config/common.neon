@@ -16,9 +16,9 @@ session:
 
 
 database:
-	dsn: 'mysql:host=127.0.0.1;dbname=test'
-	user:
-	password:
+	dsn: 'mysql:host=127.0.0.1;dbname=nette-rs'
+	user: root
+	password: root
 	options:
 		lazy: yes
 
@@ -29,3 +29,8 @@ services:
 	- App\Forms\SignInFormFactory
 	- App\Forms\SignUpFormFactory
 	router: App\Router\RouterFactory::createRouter
+	- App\Model\CalculatorManager
+
+# propojeni s dalsimi konfiguracnimi soubory.
+includes:
+	- ../app/CoreModule/config/common.neon #nacteni konfigurace z CoreModule

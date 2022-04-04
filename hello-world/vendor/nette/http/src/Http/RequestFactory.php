@@ -21,11 +21,11 @@ class RequestFactory
 	use Nette\SmartObject;
 
 	/** @internal */
-	private const CHARS = '\x09\x0A\x0D\x20-\x7E\xA0-\x{10FFFF}';
+	private const ValidChars = '\x09\x0A\x0D\x20-\x7E\xA0-\x{10FFFF}';
 
 	/** @var array */
 	public $urlFilters = [
-		'path' => ['#/{2,}#' => '/'], // '%20' => ''
+		'path' => ['#//#' => '/'], // '%20' => ''
 		'url' => [], // '#[.,)]$#D' => ''
 	];
 
@@ -91,7 +91,7 @@ class RequestFactory
 			(isset($_SERVER[$tmp = 'HTTP_HOST']) || isset($_SERVER[$tmp = 'SERVER_NAME']))
 			&& preg_match('#^([a-z0-9_.-]+|\[[a-f0-9:]+\])(:\d+)?$#Di', $_SERVER[$tmp], $pair)
 		) {
-			$url->setHost(strtolower($pair[1]));
+			$url->setHost(rtrim(strtolower($pair[1]), '.'));
 			if (isset($pair[2])) {
 				$url->setPort((int) substr($pair[2], 1));
 			} elseif (isset($_SERVER['SERVER_PORT'])) {
@@ -124,6 +124,10 @@ class RequestFactory
 
 	private function getScriptPath(Url $url): string
 	{
+		if (PHP_SAPI === 'cli-server') {
+			return '/';
+		}
+
 		$path = $url->getPath();
 		$lpath = strtolower($path);
 		$script = strtolower($_SERVER['SCRIPT_NAME'] ?? '');
@@ -134,6 +138,7 @@ class RequestFactory
 				? substr($path, 0, strrpos($path, '/', $i - strlen($path) - 1) + 1)
 				: '/';
 		}
+
 		return $path;
 	}
 
@@ -151,7 +156,7 @@ class RequestFactory
 			: (empty($_COOKIE) ? [] : $_COOKIE);
 
 		// remove invalid characters
-		$reChars = '#^[' . self::CHARS . ']*+$#Du';
+		$reChars = '#^[' . self::ValidChars . ']*+$#Du';
 		if (!$this->binary) {
 			$list = [&$query, &$post, &$cookies];
 			foreach ($list as $key => &$val) {
@@ -163,11 +168,15 @@ class RequestFactory
 						$list[$key][$k] = $v;
 						$list[] = &$list[$key][$k];
 
+					} elseif (is_string($v)) {
+						$list[$key][$k] = (string) preg_replace('#[^' . self::ValidChars . ']+#u', '', $v);
+
 					} else {
-						$list[$key][$k] = (string) preg_replace('#[^' . self::CHARS . ']+#u', '', $v);
+						throw new Nette\InvalidStateException(sprintf('Invalid value in $_POST/$_COOKIE in key %s, expected string, %s given.', "'$k'", gettype($v)));
 					}
 				}
 			}
+
 			unset($list, $key, $val, $k, $v);
 		}
 
@@ -178,7 +187,7 @@ class RequestFactory
 
 	private function getFiles(): array
 	{
-		$reChars = '#^[' . self::CHARS . ']*+$#Du';
+		$reChars = '#^[' . self::ValidChars . ']*+$#Du';
 		$files = [];
 		$list = [];
 		foreach ($_FILES ?? [] as $k => $v) {
@@ -189,6 +198,7 @@ class RequestFactory
 			) {
 				continue;
 			}
+
 			$v['@'] = &$files[$k];
 			$list[] = $v;
 		}
@@ -202,9 +212,11 @@ class RequestFactory
 				if (!$this->binary && (!preg_match($reChars, $v['name']) || preg_last_error())) {
 					$v['name'] = '';
 				}
+
 				if ($v['error'] !== UPLOAD_ERR_NO_FILE) {
 					$v['@'] = new FileUpload($v);
 				}
+
 				continue;
 			}
 
@@ -212,6 +224,7 @@ class RequestFactory
 				if (!$this->binary && is_string($k) && (!preg_match($reChars, $k) || preg_last_error())) {
 					continue;
 				}
+
 				$list[] = [
 					'name' => $v['name'][$k],
 					'type' => $v['type'][$k],
@@ -222,6 +235,7 @@ class RequestFactory
 				];
 			}
 		}
+
 		return $files;
 	}
 
@@ -239,8 +253,10 @@ class RequestFactory
 			} elseif (strncmp($k, 'CONTENT_', 8)) {
 				continue;
 			}
+
 			$headers[strtr($k, '_', '-')] = $v;
 		}
+
 		return $headers;
 	}
 
@@ -254,6 +270,7 @@ class RequestFactory
 		) {
 			$method = $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'];
 		}
+
 		return $method;
 	}
 

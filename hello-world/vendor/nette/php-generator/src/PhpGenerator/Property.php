@@ -10,12 +10,13 @@ declare(strict_types=1);
 namespace Nette\PhpGenerator;
 
 use Nette;
+use Nette\Utils\Type;
 
 
 /**
  * Class property description.
  *
- * @property mixed $value
+ * @property-deprecated mixed $value
  */
 final class Property
 {
@@ -25,38 +26,29 @@ final class Property
 	use Traits\CommentAware;
 	use Traits\AttributeAware;
 
-	/** @var mixed */
-	private $value;
-
-	/** @var bool */
-	private $static = false;
-
-	/** @var string|null */
-	private $type;
-
-	/** @var bool */
-	private $nullable = false;
-
-	/** @var bool */
-	private $initialized = false;
+	private mixed $value = null;
+	private bool $static = false;
+	private ?string $type = null;
+	private bool $nullable = false;
+	private bool $initialized = false;
+	private bool $readOnly = false;
 
 
-	/** @return static */
-	public function setValue($val): self
+	public function setValue(mixed $val): static
 	{
 		$this->value = $val;
+		$this->initialized = true;
 		return $this;
 	}
 
 
-	public function &getValue()
+	public function &getValue(): mixed
 	{
 		return $this->value;
 	}
 
 
-	/** @return static */
-	public function setStatic(bool $state = true): self
+	public function setStatic(bool $state = true): static
 	{
 		$this->static = $state;
 		return $this;
@@ -69,22 +61,22 @@ final class Property
 	}
 
 
-	/** @return static */
-	public function setType(?string $val): self
+	public function setType(?string $type): static
 	{
-		$this->type = $val;
+		$this->type = Helpers::validateType($type, $this->nullable);
 		return $this;
 	}
 
 
-	public function getType(): ?string
+	public function getType(bool $asObject = false): Type|string|null
 	{
-		return $this->type;
+		return $asObject && $this->type
+			? Type::fromString($this->type)
+			: $this->type;
 	}
 
 
-	/** @return static */
-	public function setNullable(bool $state = true): self
+	public function setNullable(bool $state = true): static
 	{
 		$this->nullable = $state;
 		return $this;
@@ -97,8 +89,7 @@ final class Property
 	}
 
 
-	/** @return static */
-	public function setInitialized(bool $state = true): self
+	public function setInitialized(bool $state = true): static
 	{
 		$this->initialized = $state;
 		return $this;
@@ -107,6 +98,28 @@ final class Property
 
 	public function isInitialized(): bool
 	{
-		return $this->initialized;
+		return $this->initialized || $this->value !== null;
+	}
+
+
+	public function setReadOnly(bool $state = true): static
+	{
+		$this->readOnly = $state;
+		return $this;
+	}
+
+
+	public function isReadOnly(): bool
+	{
+		return $this->readOnly;
+	}
+
+
+	/** @throws Nette\InvalidStateException */
+	public function validate(): void
+	{
+		if ($this->readOnly && !$this->type) {
+			throw new Nette\InvalidStateException("Property \$$this->name: Read-only properties are only supported on typed property.");
+		}
 	}
 }

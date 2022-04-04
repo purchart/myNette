@@ -54,6 +54,7 @@ final class FileUpload
 				return; // or throw exception?
 			}
 		}
+
 		$this->name = $value['name'];
 		$this->size = $value['size'];
 		$this->tmpName = $value['tmp_name'];
@@ -62,9 +63,7 @@ final class FileUpload
 
 
 	/**
-	 * Returns the original file name as submitted by the browser. Do not trust the value returned by this method.
-	 * A client could send a malicious filename with the intention to corrupt or hack your application.
-	 * Alias for getUntrustedName()
+	 * @deprecated use getUntrustedName()
 	 */
 	public function getName(): string
 	{
@@ -97,6 +96,7 @@ final class FileUpload
 			$name = preg_replace('#\.[^.]+$#D', '', $name);
 			$name .= '.' . ($this->getImageFileExtension() ?? 'unknown');
 		}
+
 		return $name;
 	}
 
@@ -110,6 +110,7 @@ final class FileUpload
 		if ($this->isOk() && $this->type === null) {
 			$this->type = finfo_file(finfo_open(FILEINFO_MIME_TYPE), $this->tmpName);
 		}
+
 		return $this->type ?: null;
 	}
 
@@ -216,7 +217,9 @@ final class FileUpload
 	 */
 	public function getImageSize(): ?array
 	{
-		return $this->isImage() ? getimagesize($this->tmpName) : null;
+		return $this->isImage()
+			? array_intersect_key(getimagesize($this->tmpName), [0, 1])
+			: null;
 	}
 
 

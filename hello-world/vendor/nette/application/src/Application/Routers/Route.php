@@ -16,7 +16,7 @@ use Nette;
  * The bidirectional route is responsible for mapping
  * HTTP request to an array for dispatch and vice-versa.
  */
-class Route extends Nette\Routing\Route implements Nette\Application\IRouter
+class Route extends Nette\Routing\Route implements Nette\Routing\Router
 {
 	private const
 		PRESENTER_KEY = 'presenter',
@@ -40,9 +40,6 @@ class Route extends Nette\Routing\Route implements Nette\Application\IRouter
 		],
 	];
 
-	/** @deprecated */
-	public static $styles = [];
-
 	/** @var int */
 	private $flags;
 
@@ -58,6 +55,7 @@ class Route extends Nette\Routing\Route implements Nette\Application\IRouter
 			if (!$presenter) {
 				throw new Nette\InvalidArgumentException("Second argument must be array or string in format Presenter:action, '$metadata' given.");
 			}
+
 			$metadata = [self::PRESENTER_KEY => $presenter];
 			if ($action !== '') {
 				$metadata['action'] = $action;
@@ -69,12 +67,11 @@ class Route extends Nette\Routing\Route implements Nette\Application\IRouter
 			];
 		}
 
-		$this->defaultMeta += self::UI_META;
-		if (self::$styles) {
-			trigger_error('Route::$styles is deprecated.', E_USER_DEPRECATED);
-			array_replace_recursive($this->defaultMeta, self::$styles);
+		if ($flags) {
+			trigger_error(__METHOD__ . '() parameter $flags is deprecated, use RouteList::addRoute(..., ..., $flags) instead.', E_USER_DEPRECATED);
 		}
 
+		$this->defaultMeta += self::UI_META;
 		$this->flags = $flags;
 		parent::__construct($mask, $metadata);
 	}
@@ -99,6 +96,7 @@ class Route extends Nette\Routing\Route implements Nette\Application\IRouter
 		if (isset($this->getMetadata()[self::MODULE_KEY], $params[self::MODULE_KEY]) && is_string($presenter)) {
 			$params[self::PRESENTER_KEY] = $params[self::MODULE_KEY] . ':' . $params[self::PRESENTER_KEY];
 		}
+
 		unset($params[self::MODULE_KEY]);
 
 		return $params;
@@ -143,16 +141,16 @@ class Route extends Nette\Routing\Route implements Nette\Application\IRouter
 		} elseif (isset($this->getMetadata()[self::MODULE_KEY])) {
 			unset($res[self::PRESENTER_KEY]);
 		}
+
 		unset($res[self::MODULE_KEY]);
 		return $res;
 	}
 
 
-	/**
-	 * Returns flags.
-	 */
+	/** @deprecated */
 	public function getFlags(): int
 	{
+		trigger_error(__METHOD__ . '() is deprecated.', E_USER_DEPRECATED);
 		return $this->flags;
 	}
 
@@ -209,3 +207,6 @@ class Route extends Nette\Routing\Route implements Nette\Application\IRouter
 		return $s;
 	}
 }
+
+
+interface_exists(Nette\Application\IRouter::class);

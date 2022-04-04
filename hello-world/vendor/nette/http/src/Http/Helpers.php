@@ -21,7 +21,7 @@ final class Helpers
 	use Nette\StaticClass;
 
 	/** @internal */
-	public const STRICT_COOKIE_NAME = 'nette-samesite';
+	public const STRICT_COOKIE_NAME = '_nss';
 
 
 	/**
@@ -48,14 +48,13 @@ final class Helpers
 		if (!$max || $max !== strlen($mask) || (int) $size < 0 || (int) $size > $max) {
 			return false;
 		}
+
 		return strncmp($ip, $mask, $size === '' ? $max : (int) $size) === 0;
 	}
 
 
 	public static function initCookie(IRequest $request, IResponse $response)
 	{
-		if (!$request->getCookie(self::STRICT_COOKIE_NAME)) {
-			$response->setCookie(self::STRICT_COOKIE_NAME, '1', 0, '/', null, null, true, 'Strict');
-		}
+		$response->setCookie(self::STRICT_COOKIE_NAME, '1', 0, '/', null, null, true, IResponse::SAME_SITE_STRICT);
 	}
 }

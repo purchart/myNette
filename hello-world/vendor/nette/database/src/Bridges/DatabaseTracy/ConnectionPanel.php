@@ -46,18 +46,46 @@ class ConnectionPanel implements Tracy\IBarPanel
 	/** @var array */
 	private $queries = [];
 
+	/** @var Tracy\BlueScreen */
+	private $blueScreen;
 
-	public function __construct(Connection $connection)
-	{
-		$connection->onQuery[] = [$this, 'logQuery'];
+
+	public static function initialize(
+		Connection $connection,
+		bool $addBarPanel = false,
+		string $name = '',
+		bool $explain = true,
+		?Tracy\Bar $bar = null,
+		?Tracy\BlueScreen $blueScreen = null
+	): ?self {
+		$blueScreen = $blueScreen ?? Tracy\Debugger::getBlueScreen();
+		$blueScreen->addPanel([self::class, 'renderException']);
+
+		if ($addBarPanel) {
+			$panel = new self($connection, $blueScreen);
+			$panel->explain = $explain;
+			$panel->name = $name;
+			$bar = $bar ?? Tracy\Debugger::getBar();
+			$bar->addPanel($panel);
+		}
+
+		return $panel ?? null;
 	}
 
 
-	public function logQuery(Connection $connection, $result): void
+	public function __construct(Connection $connection, Tracy\BlueScreen $blueScreen)
+	{
+		$connection->onQuery[] = \Closure::fromCallable([$this, 'logQuery']);
+		$this->blueScreen = $blueScreen;
+	}
+
+
+	private function logQuery(Connection $connection, $result): void
 	{
 		if ($this->disabled) {
 			return;
 		}
+
 		$this->count++;
 
 		$source = null;
@@ -66,7 +94,7 @@ class ConnectionPanel implements Tracy\IBarPanel
 			: debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
 		foreach ($trace as $row) {
 			if (
-				(isset($row['file']) && is_file($row['file']) && !Tracy\Debugger::getBluescreen()->isCollapsed($row['file']))
+				(isset($row['file']) && is_file($row['file']) && !$this->blueScreen->isCollapsed($row['file']))
 				&& ($row['class'] ?? '') !== self::class
 				&& !is_a($row['class'] ?? '', Connection::class, true)
 			) {
@@ -74,12 +102,12 @@ class ConnectionPanel implements Tracy\IBarPanel
 				break;
 			}
 		}
+
 		if ($result instanceof Nette\Database\ResultSet) {
 			$this->totalTime += $result->getTime();
 			if ($this->count < $this->maxQueries) {
 				$this->queries[] = [$connection, $result->getQueryString(), $result->getParameters(), $source, $result->getTime(), $result->getRowCount(), null];
 			}
-
 		} elseif ($result instanceof \PDOException && $this->count < $this->maxQueries) {
 			$this->queries[] = [$connection, $result->queryString, null, $source, null, null, $result->getMessage()];
 		}
@@ -91,12 +119,14 @@ class ConnectionPanel implements Tracy\IBarPanel
 		if (!$e instanceof \PDOException) {
 			return null;
 		}
+
 		if (isset($e->queryString)) {
 			$sql = $e->queryString;
 
 		} elseif ($item = Tracy\Helpers::findTrace($e->getTrace(), 'PDO::prepare')) {
 			$sql = $item['args'][0];
 		}
+
 		return isset($sql) ? [
 			'tab' => 'SQL',
 			'panel' => Helpers::dumpSql($sql, $e->params ?? []),
@@ -137,6 +167,7 @@ class ConnectionPanel implements Tracy\IBarPanel
 				} catch (\PDOException $e) {
 				}
 			}
+
 			$query[] = $command;
 			$query[] = $explain;
 			$queries[] = $query;

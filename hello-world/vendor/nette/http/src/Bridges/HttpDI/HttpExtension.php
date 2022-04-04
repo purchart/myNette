@@ -31,16 +31,19 @@ class HttpExtension extends Nette\DI\CompilerExtension
 	public function getConfigSchema(): Nette\Schema\Schema
 	{
 		return Expect::structure([
-			'proxy' => Expect::anyOf(Expect::arrayOf('string'), Expect::string()->castTo('array'))->default([])->dynamic(),
+			'proxy' => Expect::anyOf(Expect::arrayOf('string'), Expect::string()->castTo('array'))->firstIsDefault()->dynamic(),
 			'headers' => Expect::arrayOf('scalar|null')->default([
 				'X-Powered-By' => 'Nette Framework 3',
 				'Content-Type' => 'text/html; charset=utf-8',
-			]),
+			])->mergeDefaults(),
 			'frames' => Expect::anyOf(Expect::string(), Expect::bool(), null)->default('SAMEORIGIN'), // X-Frame-Options
 			'csp' => Expect::arrayOf('array|scalar|null'), // Content-Security-Policy
 			'cspReportOnly' => Expect::arrayOf('array|scalar|null'), // Content-Security-Policy-Report-Only
 			'featurePolicy' => Expect::arrayOf('array|scalar|null'), // Feature-Policy
-			'cookieSecure' => Expect::anyOf(null, true, false, 'auto'), // true|false|auto  Whether the cookie is available only through HTTPS
+			'cookiePath' => Expect::string(),
+			'cookieDomain' => Expect::string(),
+			'cookieSecure' => Expect::anyOf('auto', null, true, false)->firstIsDefault(), // Whether the cookie is available only through HTTPS
+			'disableNetteCookie' => Expect::bool(false), // disables cookie use by Nette
 		]);
 	}
 
@@ -54,15 +57,26 @@ class HttpExtension extends Nette\DI\CompilerExtension
 			->setFactory(Nette\Http\RequestFactory::class)
 			->addSetup('setProxy', [$config->proxy]);
 
-		$builder->addDefinition($this->prefix('request'))
+		$request = $builder->addDefinition($this->prefix('request'))
 			->setFactory('@Nette\Http\RequestFactory::fromGlobals');
 
 		$response = $builder->addDefinition($this->prefix('response'))
 			->setFactory(Nette\Http\Response::class);
 
+		if ($config->cookiePath !== null) {
+			$response->addSetup('$cookiePath', [$config->cookiePath]);
+		}
+
+		if ($config->cookieDomain !== null) {
+			$value = $config->cookieDomain === 'domain'
+				? $builder::literal('$this->getService(?)->getUrl()->getDomain(2)', [$request->getName()])
+				: $config->cookieDomain;
+			$response->addSetup('$cookieDomain', [$value]);
+		}
+
 		if ($config->cookieSecure !== null) {
 			$value = $config->cookieSecure === 'auto'
-				? $builder::literal('$this->getService(?)->isSecured()', [$this->prefix('request')])
+				? $builder::literal('$this->getService(?)->isSecured()', [$request->getName()])
 				: $config->cookieSecure;
 			$response->addSetup('$cookieSecure', [$value]);
 		}
@@ -91,6 +105,7 @@ class HttpExtension extends Nette\DI\CompilerExtension
 			} elseif (preg_match('#^https?:#', $frames)) {
 				$frames = "ALLOW-FROM $frames";
 			}
+
 			$headers['X-Frame-Options'] = $frames;
 		}
 
@@ -98,6 +113,7 @@ class HttpExtension extends Nette\DI\CompilerExtension
 			if (empty($config->$key)) {
 				continue;
 			}
+
 			$value = self::buildPolicy($config->$key);
 			if (strpos($value, "'nonce'")) {
 				$this->initialization->addBody('$cspNonce = base64_encode(random_bytes(16));');
@@ -106,6 +122,7 @@ class HttpExtension extends Nette\DI\CompilerExtension
 					["'nonce", "'nonce-", $value]
 				);
 			}
+
 			$headers['Content-Security-Policy' . ($key === 'csp' ? '' : '-Report-Only')] = $value;
 		}
 
@@ -120,33 +137,39 @@ class HttpExtension extends Nette\DI\CompilerExtension
 			}
 		}
 
-		$this->initialization->addBody(
-			'Nette\Http\Helpers::initCookie($this->getService(?), $response);',
-			[$this->prefix('request')]
-		);
+		if (!$config->disableNetteCookie) {
+			$this->initialization->addBody(
+				'Nette\Http\Helpers::initCookie($this->getService(?), $response);',
+				[$this->prefix('request')]
+			);
+		}
 	}
 
 
 	private static function buildPolicy(array $config): string
 	{
-		static $nonQuoted = ['require-sri-for' => 1, 'sandbox' => 1];
+		$nonQuoted = ['require-sri-for' => 1, 'sandbox' => 1];
 		$value = '';
 		foreach ($config as $type => $policy) {
 			if ($policy === false) {
 				continue;
 			}
+
 			$policy = $policy === true ? [] : (array) $policy;
 			$value .= $type;
 			foreach ($policy as $item) {
 				if (is_array($item)) {
 					$item = key($item) . ':';
 				}
+
 				$value .= !isset($nonQuoted[$type]) && preg_match('#^[a-z-]+$#D', $item)
 					? " '$item'"
 					: " $item";
 			}
+
 			$value .= '; ';
 		}
+
 		return $value;
 	}
 }

@@ -115,7 +115,7 @@ class SmtpMailer implements Mailer
 
 			if (
 				($from = $mail->getHeader('Return-Path'))
-				|| ($from = array_keys((array) $mail->getHeader('From'))[0])
+				|| ($from = array_keys((array) $mail->getHeader('From'))[0] ?? null)
 			) {
 				$this->write("MAIL FROM:<$from>", 250);
 			}
@@ -178,7 +178,7 @@ class SmtpMailer implements Mailer
 			$this->write("EHLO $this->clientHost");
 			$ehloResponse = $this->read();
 			if ((int) $ehloResponse !== 250) {
-				throw new SmtpException('SMTP server did not accept EHLO with error: ' . trim($response));
+				throw new SmtpException('SMTP server did not accept EHLO with error: ' . trim($ehloResponse));
 			}
 
 		} else {
