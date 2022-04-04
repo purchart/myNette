@@ -17,7 +17,8 @@ use Nette;
  */
 trait NameAware
 {
-	private string $name;
+	/** @var string */
+	private $name;
 
 
 	public function __construct(string $name)
@@ -25,7 +26,6 @@ trait NameAware
 		if (!Nette\PhpGenerator\Helpers::isIdentifier($name)) {
 			throw new Nette\InvalidArgumentException("Value '$name' is not valid name.");
 		}
-
 		$this->name = $name;
 	}
 
@@ -38,8 +38,9 @@ trait NameAware
 
 	/**
 	 * Returns clone with a different name.
+	 * @return static
 	 */
-	public function cloneWithName(string $name): static
+	public function cloneWithName(string $name): self
 	{
 		$dolly = clone $this;
 		$dolly->__construct($name);

@@ -23,8 +23,6 @@ use RecursiveIteratorIterator;
  *     ->from('.')
  *     ->exclude('temp');
  * </code>
- *
- * @implements \IteratorAggregate<string, \SplFileInfo>
  */
 class Finder implements \IteratorAggregate, \Countable
 {
@@ -53,7 +51,7 @@ class Finder implements \IteratorAggregate, \Countable
 
 
 	/**
-	 * Begins search for files and directories matching mask.
+	 * Begins search for files matching mask and all directories.
 	 * @param  string|string[]  $masks
 	 * @return static
 	 */
@@ -127,7 +125,6 @@ class Finder implements \IteratorAggregate, \Countable
 		if ($this->paths) {
 			throw new Nette\InvalidStateException('Directory to search has already been specified.');
 		}
-
 		$this->paths = is_array($paths[0]) ? $paths[0] : $paths;
 		$this->cursor = &$this->exclude;
 		return $this;
@@ -164,13 +161,9 @@ class Finder implements \IteratorAggregate, \Countable
 				$mask = ltrim($mask, '/');
 				$prefix = '(?<=^/)';
 			}
-
-			$pattern[] = $prefix . strtr(
-				preg_quote($mask, '#'),
-				['\*\*' => '.*', '\*' => '[^/]*', '\?' => '[^/]', '\[\!' => '[^', '\[' => '[', '\]' => ']', '\-' => '-']
-			);
+			$pattern[] = $prefix . strtr(preg_quote($mask, '#'),
+				['\*\*' => '.*', '\*' => '[^/]*', '\?' => '[^/]', '\[\!' => '[^', '\[' => '[', '\]' => ']', '\-' => '-']);
 		}
-
 		return $pattern ? '#/(' . implode('|', $pattern) . ')$#Di' : null;
 	}
 
@@ -197,14 +190,14 @@ class Finder implements \IteratorAggregate, \Countable
 
 		} elseif (count($this->paths) === 1) {
 			return $this->buildIterator((string) $this->paths[0]);
-		}
 
-		$iterator = new \AppendIterator;
-		foreach ($this->paths as $path) {
-			$iterator->append($this->buildIterator((string) $path));
+		} else {
+			$iterator = new \AppendIterator();
+			foreach ($this->paths as $path) {
+				$iterator->append($this->buildIterator((string) $path));
+			}
+			return $iterator;
 		}
-
-		return $iterator;
 	}
 
 
@@ -224,7 +217,6 @@ class Finder implements \IteratorAggregate, \Countable
 						}
 					}
 				}
-
 				return true;
 			});
 		}
@@ -245,10 +237,8 @@ class Finder implements \IteratorAggregate, \Countable
 						continue 2;
 					}
 				}
-
 				return true;
 			}
-
 			return false;
 		});
 
@@ -274,7 +264,6 @@ class Finder implements \IteratorAggregate, \Countable
 				return !preg_match($pattern, '/' . strtr($file->getSubPathName(), '\\', '/'));
 			});
 		}
-
 		return $this;
 	}
 
@@ -307,13 +296,12 @@ class Finder implements \IteratorAggregate, \Countable
 	 * @param  string  $operator  "[operator] [size] [unit]" example: >=10kB
 	 * @return static
 	 */
-	public function size(string $operator, ?int $size = null): self
+	public function size(string $operator, int $size = null): self
 	{
 		if (func_num_args() === 1) { // in $operator is predicate
 			if (!preg_match('#^(?:([=<>!]=?|<>)\s*)?((?:\d*\.)?\d+)\s*(K|M|G|)B?$#Di', $operator, $matches)) {
 				throw new Nette\InvalidArgumentException('Invalid size predicate format.');
 			}
-
 			[, $operator, $size, $unit] = $matches;
 			static $units = ['' => 1, 'k' => 1e3, 'm' => 1e6, 'g' => 1e9];
 			$size *= $units[strtolower($unit)];
@@ -337,11 +325,9 @@ class Finder implements \IteratorAggregate, \Countable
 			if (!preg_match('#^(?:([=<>!]=?|<>)\s*)?(.+)$#Di', $operator, $matches)) {
 				throw new Nette\InvalidArgumentException('Invalid date predicate format.');
 			}
-
 			[, $operator, $date] = $matches;
 			$operator = $operator ?: '=';
 		}
-
 		$date = DateTime::from($date)->format('U');
 		return $this->filter(function (RecursiveDirectoryIterator $file) use ($operator, $date): bool {
 			return self::compare($file->getMTime(), $operator, $date);
@@ -383,7 +369,7 @@ class Finder implements \IteratorAggregate, \Countable
 	{
 		return isset(self::$extMethods[$name])
 			? (self::$extMethods[$name])($this, ...$args)
-			: Nette\Utils\ObjectHelpers::strictCall(static::class, $name, array_keys(self::$extMethods));
+			: Nette\Utils\ObjectHelpers::strictCall(get_class($this), $name, array_keys(self::$extMethods));
 	}
 
 

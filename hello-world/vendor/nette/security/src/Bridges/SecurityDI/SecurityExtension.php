@@ -44,13 +44,6 @@ class SecurityExtension extends Nette\DI\CompilerExtension
 			),
 			'roles' => Expect::arrayOf('string|array|null'), // role => parent(s)
 			'resources' => Expect::arrayOf('string|null'), // resource => parent
-			'authentication' => Expect::structure([
-				'storage' => Expect::anyOf('session', 'cookie')->default('session'),
-				'expiration' => Expect::string()->dynamic(),
-				'cookieName' => Expect::string(),
-				'cookieDomain' => Expect::string(),
-				'cookieSamesite' => Expect::anyOf('Lax', 'Strict', 'None'),
-			]),
 		]);
 	}
 
@@ -64,31 +57,12 @@ class SecurityExtension extends Nette\DI\CompilerExtension
 		$builder->addDefinition($this->prefix('passwords'))
 			->setFactory(Nette\Security\Passwords::class);
 
-		$auth = $config->authentication;
-		$storage = $builder->addDefinition($this->prefix('userStorage'))
-			->setType(Nette\Security\UserStorage::class)
-			->setFactory([
-				'session' => Nette\Bridges\SecurityHttp\SessionStorage::class,
-				'cookie' => Nette\Bridges\SecurityHttp\CookieStorage::class,
-			][$auth->storage]);
-
-		if ($auth->storage === 'cookie') {
-			if ($auth->cookieDomain === 'domain') {
-				$auth->cookieDomain = $builder::literal('$this->getByType(Nette\Http\IRequest::class)->getUrl()->getDomain(2)');
-			}
-			$storage->addSetup('setCookieParameters', [$auth->cookieName, $auth->cookieDomain, $auth->cookieSamesite]);
-		}
-
-		$builder->addDefinition($this->prefix('legacyUserStorage')) // deprecated
+		$builder->addDefinition($this->prefix('userStorage'))
 			->setType(Nette\Security\IUserStorage::class)
 			->setFactory(Nette\Http\UserStorage::class);
 
 		$user = $builder->addDefinition($this->prefix('user'))
 			->setFactory(Nette\Security\User::class);
-
-		if ($auth->expiration) {
-			$user->addSetup('setExpiration', [$auth->expiration]);
-		}
 
 		if ($config->users) {
 			$usersList = $usersRoles = $usersData = [];
@@ -110,7 +84,7 @@ class SecurityExtension extends Nette\DI\CompilerExtension
 
 		if ($config->roles || $config->resources) {
 			$authorizator = $builder->addDefinition($this->prefix('authorizator'))
-				->setType(Nette\Security\Authorizator::class)
+				->setType(Nette\Security\IAuthorizator::class)
 				->setFactory(Nette\Security\Permission::class);
 
 			foreach ($config->roles as $role => $parents) {

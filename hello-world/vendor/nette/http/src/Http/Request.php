@@ -142,13 +142,11 @@ class Request implements IRequest
 
 	/**
 	 * Returns uploaded file.
-	 * @param  string|string[]  $key
-	 * @return ?FileUpload
+	 * @return FileUpload|array|null
 	 */
-	public function getFile($key)
+	public function getFile(string $key)
 	{
-		$res = Nette\Utils\Arrays::get($this->files, $key, null);
-		return $res instanceof FileUpload ? $res : null;
+		return $this->files[$key] ?? null;
 	}
 
 

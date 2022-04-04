@@ -19,7 +19,7 @@ class Rule
 {
 	use Nette\SmartObject;
 
-	/** @var Control */
+	/** @var IControl */
 	public $control;
 
 	/** @var mixed */
@@ -36,12 +36,4 @@ class Rule
 
 	/** @var Rules|null  for conditions */
 	public $branch;
-
-
-	/** @internal */
-	public function canExport(): bool
-	{
-		return is_string($this->validator)
-			|| Nette\Utils\Callback::isStatic($this->validator);
-	}
 }

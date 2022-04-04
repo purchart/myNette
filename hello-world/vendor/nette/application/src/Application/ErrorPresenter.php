@@ -26,13 +26,13 @@ final class ErrorPresenter implements Application\IPresenter
 	private $logger;
 
 
-	public function __construct(?ILogger $logger = null)
+	public function __construct(ILogger $logger = null)
 	{
 		$this->logger = $logger;
 	}
 
 
-	public function run(Application\Request $request): Application\Response
+	public function run(Application\Request $request): Application\IResponse
 	{
 		$e = $request->getParameter('exception');
 		if ($e instanceof Application\BadRequestException) {
@@ -43,7 +43,6 @@ final class ErrorPresenter implements Application\IPresenter
 				$this->logger->log($e, ILogger::EXCEPTION);
 			}
 		}
-
 		return new Application\Responses\CallbackResponse(function (Http\IRequest $httpRequest, Http\IResponse $httpResponse) use ($code): void {
 			if (preg_match('#^text/html(?:;|$)#', (string) $httpResponse->getHeader('Content-Type'))) {
 				require __DIR__ . '/templates/error.phtml';

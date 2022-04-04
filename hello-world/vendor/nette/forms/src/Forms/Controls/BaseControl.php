@@ -10,8 +10,8 @@ declare(strict_types=1);
 namespace Nette\Forms\Controls;
 
 use Nette;
-use Nette\Forms\Control;
 use Nette\Forms\Form;
+use Nette\Forms\IControl;
 use Nette\Forms\Rules;
 use Nette\Utils\Html;
 
@@ -36,7 +36,7 @@ use Nette\Utils\Html;
  * @property-read array $options
  * @property-read string $error
  */
-abstract class BaseControl extends Nette\ComponentModel\Component implements Control
+abstract class BaseControl extends Nette\ComponentModel\Component implements IControl
 {
 	/** @var string */
 	public static $idMask = 'frm-%s';
@@ -68,7 +68,7 @@ abstract class BaseControl extends Nette\ComponentModel\Component implements Con
 	/** @var Rules */
 	private $rules;
 
-	/** @var Nette\Localization\Translator|bool|null */
+	/** @var Nette\Localization\ITranslator|bool|null */
 	private $translator = true; // means autodetect
 
 	/** @var array user options */
@@ -149,7 +149,7 @@ abstract class BaseControl extends Nette\ComponentModel\Component implements Con
 	}
 
 
-	/********************* interface Control ****************d*g**/
+	/********************* interface IControl ****************d*g**/
 
 
 	/**
@@ -275,7 +275,7 @@ abstract class BaseControl extends Nette\ComponentModel\Component implements Con
 		$label->for = $this->getHtmlId();
 		$caption = $caption ?? $this->caption;
 		$translator = $this->getForm()->getTranslator();
-		$label->setText($translator && !$caption instanceof Nette\HtmlStringable ? $translator->translate($caption) : $caption);
+		$label->setText($translator && !$caption instanceof Nette\Utils\IHtmlString ? $translator->translate($caption) : $caption);
 		return $label;
 	}
 
@@ -376,7 +376,7 @@ abstract class BaseControl extends Nette\ComponentModel\Component implements Con
 	 * Sets translate adapter.
 	 * @return static
 	 */
-	public function setTranslator(?Nette\Localization\Translator $translator)
+	public function setTranslator(?Nette\Localization\ITranslator $translator)
 	{
 		$this->translator = $translator;
 		return $this;
@@ -386,7 +386,7 @@ abstract class BaseControl extends Nette\ComponentModel\Component implements Con
 	/**
 	 * Returns translate adapter.
 	 */
-	public function getTranslator(): ?Nette\Localization\Translator
+	public function getTranslator(): ?Nette\Localization\ITranslator
 	{
 		if ($this->translator === true) {
 			return $this->getForm(false)
@@ -406,7 +406,7 @@ abstract class BaseControl extends Nette\ComponentModel\Component implements Con
 		if ($translator = $this->getTranslator()) {
 			$tmp = is_array($value) ? [&$value] : [[&$value]];
 			foreach ($tmp[0] as &$v) {
-				if ($v != null && !$v instanceof Nette\HtmlStringable) { // intentionally ==
+				if ($v != null && !$v instanceof Nette\Utils\IHtmlString) { // intentionally ==
 					$v = $translator->translate($v, ...$parameters);
 				}
 			}
@@ -433,6 +433,7 @@ abstract class BaseControl extends Nette\ComponentModel\Component implements Con
 
 	/**
 	 * Adds a validation condition a returns new branch.
+	 * @return Rules      new branch
 	 */
 	public function addCondition($validator, $value = null): Rules
 	{
@@ -442,21 +443,11 @@ abstract class BaseControl extends Nette\ComponentModel\Component implements Con
 
 	/**
 	 * Adds a validation condition based on another control a returns new branch.
+	 * @return Rules      new branch
 	 */
-	public function addConditionOn(Control $control, $validator, $value = null): Rules
+	public function addConditionOn(IControl $control, $validator, $value = null): Rules
 	{
 		return $this->rules->addConditionOn($control, $validator, $value);
-	}
-
-
-	/**
-	 * Adds a input filter callback.
-	 * @return static
-	 */
-	public function addFilter(callable $filter)
-	{
-		$this->getRules()->addFilter($filter);
-		return $this;
 	}
 
 
@@ -537,6 +528,13 @@ abstract class BaseControl extends Nette\ComponentModel\Component implements Con
 	public function cleanErrors(): void
 	{
 		$this->errors = [];
+	}
+
+
+	/** @deprecated */
+	public static function enableAutoOptionalMode(): void
+	{
+		trigger_error(__METHOD__ . '() is deprecated.', E_USER_DEPRECATED);
 	}
 
 

@@ -54,8 +54,7 @@ class UrlScript extends UrlImmutable
 	{
 		$dolly = clone $this;
 		$dolly->scriptPath = $scriptPath;
-		$parent = \Closure::fromCallable([UrlImmutable::class, 'withPath'])->bindTo($dolly);
-		return $parent($path);
+		return call_user_func([$dolly, 'parent::withPath'], $path);
 	}
 
 

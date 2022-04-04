@@ -33,9 +33,9 @@ class PresenterFactory implements IPresenterFactory
 
 
 	/**
-	 * @param  callable(string): IPresenter  $factory
+	 * @param  callable&callable(string): IPresenter  $factory
 	 */
-	public function __construct(?callable $factory = null)
+	public function __construct(callable $factory = null)
 	{
 		$this->factory = $factory ?: function (string $class): IPresenter { return new $class; };
 	}
@@ -78,7 +78,14 @@ class PresenterFactory implements IPresenterFactory
 			throw new InvalidPresenterException("Cannot load presenter '$name', class '$class' is abstract.");
 		}
 
-		return $this->cache[$name] = $class;
+		$this->cache[$name] = $class;
+
+		if ($name !== ($realName = $this->unformatPresenterClass($class))) {
+			trigger_error("Case mismatch on presenter name '$name', correct name is '$realName'.", E_USER_WARNING);
+			$name = $realName;
+		}
+
+		return $class;
 	}
 
 
@@ -93,7 +100,6 @@ class PresenterFactory implements IPresenterFactory
 				if (!preg_match('#^\\\\?([\w\\\\]*\\\\)?(\w*\*\w*?\\\\)?([\w\\\\]*\*\w*)$#D', $mask, $m)) {
 					throw new Nette\InvalidStateException("Invalid mapping mask '$mask'.");
 				}
-
 				$this->mapping[$module] = [$m[1], $m[2] ?: '*Module\\', $m[3]];
 			} elseif (is_array($mask) && count($mask) === 3) {
 				$this->mapping[$module] = [$mask[0] ? $mask[0] . '\\' : '', $mask[1] . '\\', $mask[2]];
@@ -101,7 +107,6 @@ class PresenterFactory implements IPresenterFactory
 				throw new Nette\InvalidStateException("Invalid mapping mask for module $module.");
 			}
 		}
-
 		return $this;
 	}
 
@@ -120,7 +125,6 @@ class PresenterFactory implements IPresenterFactory
 		while ($part = array_shift($parts)) {
 			$mapping[0] .= str_replace('*', $part, $mapping[$parts ? 1 : 2]);
 		}
-
 		return $mapping[0];
 	}
 
@@ -131,7 +135,6 @@ class PresenterFactory implements IPresenterFactory
 	 */
 	public function unformatPresenterClass(string $class): ?string
 	{
-		trigger_error(__METHOD__ . '() is deprecated.', E_USER_DEPRECATED);
 		foreach ($this->mapping as $module => $mapping) {
 			$mapping = str_replace(['\\', '*'], ['\\\\', '(\w+)'], $mapping);
 			if (preg_match("#^\\\\?$mapping[0]((?:$mapping[1])*)$mapping[2]$#Di", $class, $matches)) {
@@ -139,7 +142,6 @@ class PresenterFactory implements IPresenterFactory
 					. preg_replace("#$mapping[1]#iA", '$1:', $matches[1]) . $matches[3];
 			}
 		}
-
 		return null;
 	}
 }

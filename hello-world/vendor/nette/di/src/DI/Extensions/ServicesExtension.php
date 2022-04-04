@@ -69,7 +69,7 @@ final class ServicesExtension extends Nette\DI\CompilerExtension
 			];
 			$this->{$methods[$config->defType]}($def, $config);
 			$this->updateDefinition($def, $config);
-		} catch (\Throwable $e) {
+		} catch (\Exception $e) {
 			throw new Nette\DI\InvalidConfigurationException(($name ? "Service '$name': " : '') . $e->getMessage(), 0, $e);
 		}
 	}
@@ -92,9 +92,8 @@ final class ServicesExtension extends Nette\DI\CompilerExtension
 		if ($config->arguments) {
 			$arguments = Helpers::filterArguments($config->arguments);
 			if (empty($config->reset['arguments']) && !Nette\Utils\Arrays::isList($arguments)) {
-				$arguments = array_replace($definition->getFactory()->arguments, $arguments);
+				$arguments += $definition->getFactory()->arguments;
 			}
-
 			$definition->setArguments($arguments);
 		}
 
@@ -102,12 +101,10 @@ final class ServicesExtension extends Nette\DI\CompilerExtension
 			if (!empty($config->reset['setup'])) {
 				$definition->setSetup([]);
 			}
-
 			foreach (Helpers::filterArguments($config->setup) as $id => $setup) {
 				if (is_array($setup)) {
 					$setup = new Statement(key($setup), array_values($setup));
 				}
-
 				$definition->addSetup($setup);
 			}
 		}
@@ -150,9 +147,8 @@ final class ServicesExtension extends Nette\DI\CompilerExtension
 		if ($config->arguments) {
 			$arguments = Helpers::filterArguments($config->arguments);
 			if (empty($config->reset['arguments']) && !Nette\Utils\Arrays::isList($arguments)) {
-				$arguments = array_replace($resultDef->getFactory()->arguments, $arguments);
+				$arguments += $resultDef->getFactory()->arguments;
 			}
-
 			$resultDef->setArguments($arguments);
 		}
 
@@ -160,12 +156,10 @@ final class ServicesExtension extends Nette\DI\CompilerExtension
 			if (!empty($config->reset['setup'])) {
 				$resultDef->setSetup([]);
 			}
-
 			foreach (Helpers::filterArguments($config->setup) as $id => $setup) {
 				if (is_array($setup)) {
 					$setup = new Statement(key($setup), array_values($setup));
 				}
-
 				$resultDef->addSetup($setup);
 			}
 		}
@@ -214,7 +208,6 @@ final class ServicesExtension extends Nette\DI\CompilerExtension
 			if (!empty($config->reset['tags'])) {
 				$definition->setTags([]);
 			}
-
 			foreach ($config->tags as $tag => $attrs) {
 				if (is_int($tag) && is_string($attrs)) {
 					$definition->addTag($attrs);
@@ -233,7 +226,6 @@ final class ServicesExtension extends Nette\DI\CompilerExtension
 		} elseif (preg_match('#^@[\w\\\\]+$#D', $key)) {
 			return $this->getContainerBuilder()->getByType(substr($key, 1), true);
 		}
-
 		return $key;
 	}
 

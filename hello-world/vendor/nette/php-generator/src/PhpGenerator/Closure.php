@@ -15,7 +15,7 @@ use Nette;
 /**
  * Closure.
  *
- * @property-deprecated string $body
+ * @property string $body
  */
 final class Closure
 {
@@ -24,7 +24,7 @@ final class Closure
 	use Traits\AttributeAware;
 
 	/** @var Parameter[] */
-	private array $uses = [];
+	private $uses = [];
 
 
 	public static function from(\Closure $closure): self
@@ -35,14 +35,23 @@ final class Closure
 
 	public function __toString(): string
 	{
-		return (new Printer)->printClosure($this);
+		try {
+			return (new Printer)->printClosure($this);
+		} catch (\Throwable $e) {
+			if (PHP_VERSION_ID >= 70400) {
+				throw $e;
+			}
+			trigger_error('Exception in ' . __METHOD__ . "(): {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}", E_USER_ERROR);
+			return '';
+		}
 	}
 
 
 	/**
 	 * @param  Parameter[]  $uses
+	 * @return static
 	 */
-	public function setUses(array $uses): static
+	public function setUses(array $uses): self
 	{
 		(function (Parameter ...$uses) {})(...$uses);
 		$this->uses = $uses;
@@ -50,7 +59,6 @@ final class Closure
 	}
 
 
-	/** @return Parameter[] */
 	public function getUses(): array
 	{
 		return $this->uses;

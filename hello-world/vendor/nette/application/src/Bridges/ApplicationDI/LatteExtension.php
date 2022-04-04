@@ -11,9 +11,6 @@ namespace Nette\Bridges\ApplicationDI;
 
 use Latte;
 use Nette;
-use Nette\Bridges\ApplicationLatte;
-use Nette\Schema\Expect;
-use Tracy;
 
 
 /**
@@ -32,18 +29,20 @@ final class LatteExtension extends Nette\DI\CompilerExtension
 	{
 		$this->tempDir = $tempDir;
 		$this->debugMode = $debugMode;
-	}
 
+		$this->config = new class {
+			/** @var bool */
+			public $xhtml = false;
 
-	public function getConfigSchema(): Nette\Schema\Schema
-	{
-		return Expect::structure([
-			'debugger' => Expect::anyOf(true, false, 'all'),
-			'xhtml' => Expect::bool(false)->deprecated(),
-			'macros' => Expect::arrayOf('string'),
-			'templateClass' => Expect::string(),
-			'strictTypes' => Expect::bool(false),
-		]);
+			/** @var string[] */
+			public $macros = [];
+
+			/** @var ?string */
+			public $templateClass;
+
+			/** @var bool */
+			public $strictTypes = false;
+		};
 	}
 
 
@@ -57,7 +56,7 @@ final class LatteExtension extends Nette\DI\CompilerExtension
 		$builder = $this->getContainerBuilder();
 
 		$latteFactory = $builder->addFactoryDefinition($this->prefix('latteFactory'))
-			->setImplement(ApplicationLatte\LatteFactory::class)
+			->setImplement(Nette\Bridges\ApplicationLatte\ILatteFactory::class)
 			->getResultDefinition()
 				->setFactory(Latte\Engine::class)
 				->addSetup('setTempDirectory', [$this->tempDir])
@@ -70,7 +69,8 @@ final class LatteExtension extends Nette\DI\CompilerExtension
 		}
 
 		$builder->addDefinition($this->prefix('templateFactory'))
-			->setFactory(ApplicationLatte\TemplateFactory::class)
+			->setType(Nette\Application\UI\ITemplateFactory::class)
+			->setFactory(Nette\Bridges\ApplicationLatte\TemplateFactory::class)
 			->setArguments(['templateClass' => $config->templateClass]);
 
 		foreach ($config->macros as $macro) {
@@ -81,42 +81,6 @@ final class LatteExtension extends Nette\DI\CompilerExtension
 			$builder->addAlias('nette.latteFactory', $this->prefix('latteFactory'));
 			$builder->addAlias('nette.templateFactory', $this->prefix('templateFactory'));
 		}
-	}
-
-
-	public function beforeCompile()
-	{
-		$builder = $this->getContainerBuilder();
-
-		if (
-			$this->debugMode
-			&& ($this->config->debugger ?? $builder->getByType(Tracy\Bar::class))
-			&& class_exists(Latte\Bridges\Tracy\LattePanel::class)
-		) {
-			$factory = $builder->getDefinition($this->prefix('templateFactory'));
-			$factory->addSetup([self::class, 'initLattePanel'], [$factory, 'all' => $this->config->debugger === 'all']);
-		}
-	}
-
-
-	public static function initLattePanel(
-		Nette\Application\UI\TemplateFactory $factory,
-		Tracy\Bar $bar,
-		bool $all = false
-	) {
-		if (!$factory instanceof ApplicationLatte\TemplateFactory) {
-			return;
-		}
-
-		$factory->onCreate[] = function (ApplicationLatte\Template $template) use ($bar, $all) {
-			$control = $template->getLatte()->getProviders()['uiControl'] ?? null;
-			if ($all || $control instanceof Nette\Application\UI\Presenter) {
-				$bar->addPanel(new Latte\Bridges\Tracy\LattePanel(
-					$template->getLatte(),
-					$all && $control ? (new \ReflectionObject($control))->getShortName() : ''
-				));
-			}
-		};
 	}
 
 
@@ -131,14 +95,12 @@ final class LatteExtension extends Nette\DI\CompilerExtension
 			} else {
 				[$macro, $method] = explode('::', $macro);
 			}
-
 			$definition->addSetup('?->onCompile[] = function ($engine) { ?->' . $method . '($engine->getCompiler()); }', ['@self', $macro]);
 
 		} else {
 			if (strpos($macro, '::') === false && class_exists($macro)) {
 				$macro .= '::install';
 			}
-
 			$definition->addSetup('?->onCompile[] = function ($engine) { ' . $macro . '($engine->getCompiler()); }', ['@self']);
 		}
 	}

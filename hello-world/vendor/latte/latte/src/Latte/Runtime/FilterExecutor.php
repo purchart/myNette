@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Latte\Runtime;
 
-use Latte;
 use Latte\Engine;
 use Latte\Helpers;
 
@@ -20,11 +19,46 @@ use Latte\Helpers;
  */
 class FilterExecutor
 {
-	/** @var callable[] */
+	/** @var array */
 	private $_dynamic = [];
 
-	/** @var array<string, array{callable, ?bool}>  [name => [callback, FilterInfo aware] */
-	private $_static = [];
+	/** @var array [name => [callback, FilterInfo aware] */
+	private $_static = [
+		'batch' => [[Filters::class, 'batch'], false],
+		'breaklines' => [[Filters::class, 'breaklines'], false],
+		'bytes' => [[Filters::class, 'bytes'], false],
+		'capitalize' => [[Filters::class, 'capitalize'], false],
+		'datastream' => [[Filters::class, 'dataStream'], false],
+		'date' => [[Filters::class, 'date'], false],
+		'escapecss' => [[Filters::class, 'escapeCss'], false],
+		'escapehtml' => [[Filters::class, 'escapeHtml'], false],
+		'escapehtmlcomment' => [[Filters::class, 'escapeHtmlComment'], false],
+		'escapeical' => [[Filters::class, 'escapeICal'], false],
+		'escapejs' => [[Filters::class, 'escapeJs'], false],
+		'escapeurl' => ['rawurlencode', false],
+		'escapexml' => [[Filters::class, 'escapeXml'], false],
+		'firstupper' => [[Filters::class, 'firstUpper'], false],
+		'checkurl' => [[Filters::class, 'safeUrl'], false],
+		'implode' => [[Filters::class, 'implode'], false],
+		'indent' => [[Filters::class, 'indent'], true],
+		'length' => [[Filters::class, 'length'], false],
+		'lower' => [[Filters::class, 'lower'], false],
+		'number' => ['number_format', false],
+		'padleft' => [[Filters::class, 'padLeft'], false],
+		'padright' => [[Filters::class, 'padRight'], false],
+		'repeat' => [[Filters::class, 'repeat'], true],
+		'replace' => [[Filters::class, 'replace'], true],
+		'replacere' => [[Filters::class, 'replaceRe'], false],
+		'reverse' => [[Filters::class, 'reverse'], false],
+		'strip' => [[Filters::class, 'strip'], true],
+		'striphtml' => [[Filters::class, 'stripHtml'], true],
+		'striptags' => [[Filters::class, 'stripTags'], true],
+		'substr' => [[Filters::class, 'substring'], false],
+		'trim' => [[Filters::class, 'trim'], true],
+		'truncate' => [[Filters::class, 'truncate'], false],
+		'upper' => [[Filters::class, 'upper'], false],
+		'webalize' => [[\Nette\Utils\Strings::class, 'webalize'], false],
+	];
 
 
 	/**
@@ -40,7 +74,6 @@ class FilterExecutor
 			$this->_static[$name] = [$callback, null];
 			unset($this->$name);
 		}
-
 		return $this;
 	}
 
@@ -58,7 +91,7 @@ class FilterExecutor
 	/**
 	 * Returns filter for classic calling.
 	 */
-	public function __get(string $name): callable
+	public function __get($name): callable
 	{
 		$lname = strtolower($name);
 		if (isset($this->$lname)) { // case mismatch
@@ -73,7 +106,6 @@ class FilterExecutor
 						$args[1] = $args[1]->__toString();
 						$info->contentType = Engine::CONTENT_HTML;
 					}
-
 					$res = $callback(...$args);
 					return $info->contentType === Engine::CONTENT_HTML
 						? new Html($res)
@@ -95,7 +127,6 @@ class FilterExecutor
 					return ($this->$name)(...func_get_args());
 				}
 			}
-
 			$hint = ($t = Helpers::getSuggestion(array_keys($this->_static), $name))
 				? ", did you mean '$t'?"
 				: '.';
@@ -106,7 +137,6 @@ class FilterExecutor
 
 	/**
 	 * Calls filter with FilterInfo.
-	 * @param  mixed  ...$args
 	 * @return mixed
 	 */
 	public function filterContent(string $name, FilterInfo $info, ...$args)
@@ -120,56 +150,41 @@ class FilterExecutor
 		}
 
 		[$callback, $aware] = $this->prepareFilter($lname);
-
-		if ($info->contentType === Engine::CONTENT_HTML && $args[0] instanceof HtmlStringable) {
-			$args[0] = $args[0]->__toString();
-		}
-
 		if ($aware) { // FilterInfo aware filter
 			array_unshift($args, $info);
 			return $callback(...$args);
 		}
-
 		// classic filter
 		if ($info->contentType !== Engine::CONTENT_TEXT) {
-			throw new Latte\RuntimeException("Filter |$name is called with incompatible content type " . strtoupper($info->contentType)
-				. ($info->contentType === Engine::CONTENT_HTML ? ', try to prepend |stripHtml.' : '.'));
+			trigger_error("Filter |$name is called with incompatible content type " . strtoupper($info->contentType)
+				. ($info->contentType === Engine::CONTENT_HTML ? ', try to prepend |stripHtml.' : '.'), E_USER_WARNING);
 		}
-
 		$res = ($this->$name)(...$args);
 		if ($res instanceof HtmlStringable) {
 			trigger_error("Filter |$name should be changed to content-aware filter.");
 			$info->contentType = Engine::CONTENT_HTML;
 			$res = $res->__toString();
 		}
-
 		return $res;
 	}
 
 
-	/**
-	 * @return array{callable, bool}
-	 */
 	private function prepareFilter(string $name): array
 	{
-		if (isset($this->_static[$name][1])) {
-			return $this->_static[$name];
+		if (!isset($this->_static[$name][1])) {
+			$callback = $this->_static[$name][0];
+			if (is_string($callback) && strpos($callback, '::')) {
+				$callback = explode('::', $callback);
+			} elseif (is_object($callback)) {
+				$callback = [$callback, '__invoke'];
+			}
+			$ref = is_array($callback)
+				? new \ReflectionMethod($callback[0], $callback[1])
+				: new \ReflectionFunction($callback);
+			$this->_static[$name][1] = ($tmp = $ref->getParameters())
+				&& $tmp[0]->getType() instanceof \ReflectionNamedType
+				&& $tmp[0]->getType()->getName() === FilterInfo::class;
 		}
-
-		$callback = $this->_static[$name][0];
-		if (is_string($callback) && strpos($callback, '::')) {
-			$callback = explode('::', $callback);
-		} elseif (is_object($callback)) {
-			$callback = [$callback, '__invoke'];
-		}
-
-		$ref = is_array($callback)
-			? new \ReflectionMethod($callback[0], $callback[1])
-			: new \ReflectionFunction($callback);
-		$this->_static[$name][1] = ($tmp = $ref->getParameters())
-			&& $tmp[0]->getType() instanceof \ReflectionNamedType
-			&& $tmp[0]->getType()->getName() === FilterInfo::class;
-
 		return $this->_static[$name];
 	}
 }

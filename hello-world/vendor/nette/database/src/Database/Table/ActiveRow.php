@@ -61,7 +61,6 @@ class ActiveRow implements \IteratorAggregate, IRow
 			if (func_num_args() || PHP_VERSION_ID >= 70400) {
 				throw $e;
 			}
-
 			trigger_error('Exception in ' . __METHOD__ . "(): {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}", E_USER_ERROR);
 			return '';
 		}
@@ -93,6 +92,7 @@ class ActiveRow implements \IteratorAggregate, IRow
 			} else {
 				return null;
 			}
+
 		} else {
 			$primaryVal = [];
 			foreach ($primary as $key) {
@@ -103,10 +103,8 @@ class ActiveRow implements \IteratorAggregate, IRow
 						return null;
 					}
 				}
-
 				$primaryVal[$key] = $this->data[$key];
 			}
-
 			return $primaryVal;
 		}
 	}
@@ -125,7 +123,7 @@ class ActiveRow implements \IteratorAggregate, IRow
 	 * Returns referenced row.
 	 * @return self|null if the row does not exist
 	 */
-	public function ref(string $key, ?string $throughColumn = null): ?self
+	public function ref(string $key, string $throughColumn = null): ?IRow
 	{
 		$row = $this->table->getReferencedTable($this, $key, $throughColumn);
 		if ($row === false) {
@@ -139,7 +137,7 @@ class ActiveRow implements \IteratorAggregate, IRow
 	/**
 	 * Returns referencing rows.
 	 */
-	public function related(string $key, ?string $throughColumn = null): GroupedSelection
+	public function related(string $key, string $throughColumn = null): GroupedSelection
 	{
 		$groupedSelection = $this->table->getReferencingTable($key, $throughColumn, $this[$this->table->getPrimary()]);
 		if (!$groupedSelection) {
@@ -172,12 +170,10 @@ class ActiveRow implements \IteratorAggregate, IRow
 				$selection = $this->table->createSelectionInstance()
 					->wherePrimary($tmp + $primary);
 			}
-
 			$selection->select('*');
 			if (($row = $selection->fetch()) === null) {
 				throw new Nette\InvalidStateException('Database refetch failed; row does not exist!');
 			}
-
 			$this->data = $row->data;
 			return true;
 		} else {
@@ -233,7 +229,6 @@ class ActiveRow implements \IteratorAggregate, IRow
 	 * @param  string  $column
 	 * @return mixed
 	 */
-	#[\ReturnTypeWillChange]
 	public function offsetGet($column)
 	{
 		return $this->__get($column);
@@ -320,11 +315,9 @@ class ActiveRow implements \IteratorAggregate, IRow
 			if (!isset($this->table[$this->getSignature()])) {
 				throw new Nette\InvalidStateException("Database refetch failed; row with signature '{$this->getSignature()}' does not exist!");
 			}
-
 			$this->data = $this->table[$this->getSignature()]->data;
 			$this->dataRefreshed = true;
 		}
-
 		return isset($this->data[$key]) || array_key_exists($key, $this->data);
 	}
 

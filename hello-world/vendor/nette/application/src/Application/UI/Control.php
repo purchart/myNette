@@ -15,17 +15,17 @@ use Nette;
 /**
  * Control is renderable Presenter component.
  *
- * @property-read Template|Nette\Bridges\ApplicationLatte\DefaultTemplate|\stdClass $template
+ * @property-read ITemplate|Nette\Bridges\ApplicationLatte\Template|\stdClass $template
  */
-abstract class Control extends Component implements Renderable
+abstract class Control extends Component implements IRenderable
 {
 	/** @var bool */
 	public $snippetMode;
 
-	/** @var TemplateFactory */
+	/** @var ITemplateFactory */
 	private $templateFactory;
 
-	/** @var Template */
+	/** @var ITemplate */
 	private $template;
 
 	/** @var array */
@@ -35,82 +35,48 @@ abstract class Control extends Component implements Renderable
 	/********************* template factory ****************d*g**/
 
 
-	final public function setTemplateFactory(TemplateFactory $templateFactory)
+	final public function setTemplateFactory(ITemplateFactory $templateFactory)
 	{
 		$this->templateFactory = $templateFactory;
 		return $this;
 	}
 
 
-	final public function getTemplate(): Template
+	final public function getTemplate(): ITemplate
 	{
 		if ($this->template === null) {
 			$this->template = $this->createTemplate();
 		}
-
 		return $this->template;
 	}
 
 
-	/**
-	 * @param  string  $class
-	 */
-	protected function createTemplate(/*string $class = null*/): Template
+	protected function createTemplate(): ITemplate
 	{
-		$class = func_num_args() // back compatibility
-			? func_get_arg(0)
-			: $this->formatTemplateClass();
 		$templateFactory = $this->templateFactory ?: $this->getPresenter()->getTemplateFactory();
-		return $templateFactory->createTemplate($this, $class);
-	}
-
-
-	public function formatTemplateClass(): ?string
-	{
-		return $this->checkTemplateClass(preg_replace('#Control$#', '', static::class) . 'Template');
-	}
-
-
-	/** @internal */
-	protected function checkTemplateClass(string $class): ?string
-	{
-		if (!class_exists($class)) {
-			return null;
-		} elseif (!is_a($class, Template::class, true)) {
-			trigger_error(sprintf(
-				'%s: class %s was found but does not implement the %s, so it will not be used for the template.',
-				static::class,
-				$class,
-				Template::class
-			), E_USER_NOTICE);
-			return null;
-		} else {
-			return $class;
-		}
+		return $templateFactory->createTemplate($this);
 	}
 
 
 	/**
 	 * Descendant can override this method to customize template compile-time filters.
 	 */
-	public function templatePrepareFilters(Template $template): void
+	public function templatePrepareFilters(ITemplate $template): void
 	{
 	}
 
 
 	/**
 	 * Saves the message to template, that can be displayed after redirect.
-	 * @param  string|\stdClass|Nette\HtmlStringable  $message
 	 */
 	public function flashMessage($message, string $type = 'info'): \stdClass
 	{
 		$id = $this->getParameterId('flash');
-		$flash = $message instanceof \stdClass ? $message : (object) [
+		$messages = $this->getPresenter()->getFlashSession()->$id;
+		$messages[] = $flash = (object) [
 			'message' => $message,
 			'type' => $type,
 		];
-		$messages = $this->getPresenter()->getFlashSession()->$id;
-		$messages[] = $flash;
 		$this->getTemplate()->flashes = $messages;
 		$this->getPresenter()->getFlashSession()->$id = $messages;
 		return $flash;
@@ -123,7 +89,7 @@ abstract class Control extends Component implements Renderable
 	/**
 	 * Forces control or its snippet to repaint.
 	 */
-	public function redrawControl(?string $snippet = null, bool $redraw = true): void
+	public function redrawControl(string $snippet = null, bool $redraw = true): void
 	{
 		if ($redraw) {
 			$this->invalidSnippets[$snippet ?? "\0"] = true;
@@ -140,7 +106,7 @@ abstract class Control extends Component implements Renderable
 	/**
 	 * Is required to repaint the control or its snippet?
 	 */
-	public function isControlInvalid(?string $snippet = null): bool
+	public function isControlInvalid(string $snippet = null): bool
 	{
 		if ($snippet !== null) {
 			return $this->invalidSnippets[$snippet] ?? isset($this->invalidSnippets["\0"]);
@@ -152,11 +118,12 @@ abstract class Control extends Component implements Renderable
 		$queue = [$this];
 		do {
 			foreach (array_shift($queue)->getComponents() as $component) {
-				if ($component instanceof Renderable) {
+				if ($component instanceof IRenderable) {
 					if ($component->isControlInvalid()) {
 						// $this->invalidSnippets['__child'] = true; // as cache
 						return true;
 					}
+
 				} elseif ($component instanceof Nette\ComponentModel\IContainer) {
 					$queue[] = $component;
 				}

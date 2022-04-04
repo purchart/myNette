@@ -62,7 +62,9 @@ final class FileUpload
 
 
 	/**
-	 * @deprecated use getUntrustedName()
+	 * Returns the original file name as submitted by the browser. Do not trust the value returned by this method.
+	 * A client could send a malicious filename with the intention to corrupt or hack your application.
+	 * Alias for getUntrustedName()
 	 */
 	public function getName(): string
 	{
@@ -214,9 +216,7 @@ final class FileUpload
 	 */
 	public function getImageSize(): ?array
 	{
-		return $this->isImage()
-			? array_intersect_key(getimagesize($this->tmpName), [0, 1])
-			: null;
+		return $this->isImage() ? getimagesize($this->tmpName) : null;
 	}
 
 

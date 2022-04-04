@@ -96,11 +96,7 @@ abstract class Component implements IComponent
 			$attached = [$this, 'attached'];
 			$detached = [$this, 'detached'];
 		}
-		if (
-			($obj = $this->lookup($type, false))
-			&& $attached
-			&& !in_array([$attached, $detached], $this->monitors[$type][3], true)
-		) {
+		if (($obj = $this->lookup($type, false)) && $attached && !in_array([$attached, $detached], $this->monitors[$type][3], true)) {
 			$attached($obj);
 		}
 		$this->monitors[$type][3][] = [$attached, $detached]; // mark as monitored
@@ -300,7 +296,7 @@ abstract class Component implements IComponent
 	 */
 	final public function __sleep()
 	{
-		throw new Nette\NotImplementedException('Object serialization is not supported by class ' . static::class);
+		throw new Nette\NotImplementedException('Object serialization is not supported by class ' . get_class($this));
 	}
 
 
@@ -309,6 +305,6 @@ abstract class Component implements IComponent
 	 */
 	final public function __wakeup()
 	{
-		throw new Nette\NotImplementedException('Object unserialization is not supported by class ' . static::class);
+		throw new Nette\NotImplementedException('Object unserialization is not supported by class ' . get_class($this));
 	}
 }

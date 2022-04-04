@@ -15,7 +15,7 @@ use Nette;
 /**
  * Supplemental Oracle database driver.
  */
-class OciDriver implements Nette\Database\Driver
+class OciDriver implements Nette\Database\ISupplementalDriver
 {
 	use Nette\SmartObject;
 
@@ -110,7 +110,6 @@ class OciDriver implements Nette\Database\Driver
 				];
 			}
 		}
-
 		return $tables;
 	}
 

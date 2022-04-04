@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace Latte {
 	if (false) {
 		/** @deprecated use Latte\Loader */
-		interface ILoader extends Loader
+		interface ILoader
 		{
 		}
 	} elseif (!interface_exists(ILoader::class)) {
@@ -19,7 +19,7 @@ namespace Latte {
 
 	if (false) {
 		/** @deprecated use Latte\Macro */
-		interface IMacro extends Macro
+		interface IMacro
 		{
 		}
 	} elseif (!interface_exists(IMacro::class)) {
@@ -30,7 +30,7 @@ namespace Latte {
 namespace Latte\Runtime {
 	if (false) {
 		/** @deprecated use Latte\Runtime\HtmlStringable */
-		interface IHtmlString extends HtmlStringable
+		interface IHtmlString
 		{
 		}
 	} elseif (!interface_exists(IHtmlString::class)) {
@@ -39,7 +39,7 @@ namespace Latte\Runtime {
 
 	if (false) {
 		/** @deprecated use Latte\Runtime\SnippetBridge */
-		interface ISnippetBridge extends SnippetBridge
+		interface ISnippetBridge
 		{
 		}
 	} elseif (!interface_exists(ISnippetBridge::class)) {

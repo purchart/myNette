@@ -48,24 +48,20 @@ class Validator
 
 
 	/**
-	 * @return string|Nette\HtmlStringable
+	 * @return string|Nette\Utils\IHtmlString
 	 * @internal
 	 */
 	public static function formatMessage(Rule $rule, bool $withValue = true)
 	{
 		$message = $rule->message;
-		if ($message instanceof Nette\HtmlStringable) {
+		if ($message instanceof Nette\Utils\IHtmlString) {
 			return $message;
 
 		} elseif ($message === null && is_string($rule->validator) && isset(static::$messages[$rule->validator])) {
 			$message = static::$messages[$rule->validator];
 
 		} elseif ($message == null) { // intentionally ==
-			trigger_error(
-				"Missing validation message for control '{$rule->control->getName()}'"
-				. (is_string($rule->validator) ? " (validator '{$rule->validator}')." : '.'),
-				E_USER_WARNING
-			);
+			trigger_error("Missing validation message for control '{$rule->control->getName()}'.", E_USER_WARNING);
 		}
 
 		if ($translator = $rule->control->getForm()->getTranslator()) {
@@ -79,7 +75,7 @@ class Validator
 				case 'label':
 					if ($rule->control instanceof Controls\BaseControl) {
 						$caption = $rule->control->getCaption();
-						$caption = $caption instanceof Nette\HtmlStringable
+						$caption = $caption instanceof Nette\Utils\IHtmlString
 							? $caption->getText()
 							: ($translator ? $translator->translate($caption) : $caption);
 						return rtrim((string) $caption, ':');
@@ -91,7 +87,7 @@ class Validator
 				default:
 					$args = is_array($rule->arg) ? $rule->arg : [$rule->arg];
 					$i = (int) $m[1] ? (int) $m[1] - 1 : $i + 1;
-					return isset($args[$i]) ? ($args[$i] instanceof Control ? ($withValue ? $args[$i]->getValue() : "%$i") : $args[$i]) : '';
+					return isset($args[$i]) ? ($args[$i] instanceof IControl ? ($withValue ? $args[$i]->getValue() : "%$i") : $args[$i]) : '';
 			}
 		}, $message);
 		return $message;
@@ -104,28 +100,25 @@ class Validator
 	/**
 	 * Is control's value equal with second parameter?
 	 */
-	public static function validateEqual(Control $control, $arg): bool
+	public static function validateEqual(IControl $control, $arg): bool
 	{
 		$value = $control->getValue();
-		$values = is_array($value) ? $value : [$value];
-		$args = is_array($arg) ? $arg : [$arg];
-
-		foreach ($values as $val) {
-			foreach ($args as $item) {
+		foreach ((is_array($value) ? $value : [$value]) as $val) {
+			foreach ((is_array($arg) ? $arg : [$arg]) as $item) {
 				if ((string) $val === (string) $item) {
 					continue 2;
 				}
 			}
 			return false;
 		}
-		return (bool) $values;
+		return true;
 	}
 
 
 	/**
 	 * Is control's value not equal with second parameter?
 	 */
-	public static function validateNotEqual(Control $control, $arg): bool
+	public static function validateNotEqual(IControl $control, $arg): bool
 	{
 		return !static::validateEqual($control, $arg);
 	}
@@ -134,7 +127,7 @@ class Validator
 	/**
 	 * Returns argument.
 	 */
-	public static function validateStatic(Control $control, bool $arg): bool
+	public static function validateStatic(IControl $control, bool $arg): bool
 	{
 		return $arg;
 	}
@@ -170,7 +163,7 @@ class Validator
 	/**
 	 * Is a control's value number in specified range?
 	 */
-	public static function validateRange(Control $control, array $range): bool
+	public static function validateRange(IControl $control, array $range): bool
 	{
 		$range = array_map(function ($v) {
 			return $v === '' ? null : $v;
@@ -182,7 +175,7 @@ class Validator
 	/**
 	 * Is a control's value number greater than or equal to the specified minimum?
 	 */
-	public static function validateMin(Control $control, $minimum): bool
+	public static function validateMin(IControl $control, $minimum): bool
 	{
 		return Validators::isInRange($control->getValue(), [$minimum === '' ? null : $minimum, null]);
 	}
@@ -191,7 +184,7 @@ class Validator
 	/**
 	 * Is a control's value number less than or equal to the specified maximum?
 	 */
-	public static function validateMax(Control $control, $maximum): bool
+	public static function validateMax(IControl $control, $maximum): bool
 	{
 		return Validators::isInRange($control->getValue(), [null, $maximum === '' ? null : $maximum]);
 	}
@@ -201,7 +194,7 @@ class Validator
 	 * Count/length validator. Range is array, min and max length pair.
 	 * @param  array|int  $range
 	 */
-	public static function validateLength(Control $control, $range): bool
+	public static function validateLength(IControl $control, $range): bool
 	{
 		if (!is_array($range)) {
 			$range = [$range, $range];
@@ -214,7 +207,7 @@ class Validator
 	/**
 	 * Has control's value minimal count/length?
 	 */
-	public static function validateMinLength(Control $control, $length): bool
+	public static function validateMinLength(IControl $control, $length): bool
 	{
 		return static::validateLength($control, [$length, null]);
 	}
@@ -223,7 +216,7 @@ class Validator
 	/**
 	 * Is control's value count/length in limit?
 	 */
-	public static function validateMaxLength(Control $control, $length): bool
+	public static function validateMaxLength(IControl $control, $length): bool
 	{
 		return static::validateLength($control, [null, $length]);
 	}
@@ -241,7 +234,7 @@ class Validator
 	/**
 	 * Is control's value valid email address?
 	 */
-	public static function validateEmail(Control $control): bool
+	public static function validateEmail(IControl $control): bool
 	{
 		return Validators::isEmail((string) $control->getValue());
 	}
@@ -250,13 +243,13 @@ class Validator
 	/**
 	 * Is control's value valid URL?
 	 */
-	public static function validateUrl(Control $control): bool
+	public static function validateUrl(IControl $control): bool
 	{
 		$value = (string) $control->getValue();
 		if (Validators::isUrl($value)) {
 			return true;
 		}
-		$value = "https://$value";
+		$value = "http://$value";
 		if (Validators::isUrl($value)) {
 			$control->setValue($value);
 			return true;
@@ -269,7 +262,7 @@ class Validator
 	 * Does the control's value match the regular expression?
 	 * Case-sensitive to comply with the HTML5 <input /> pattern attribute behaviour
 	 */
-	public static function validatePattern(Control $control, string $pattern, bool $caseInsensitive = false): bool
+	public static function validatePattern(IControl $control, string $pattern, bool $caseInsensitive = false): bool
 	{
 		$regexp = "\x01^(?:$pattern)$\x01Du" . ($caseInsensitive ? 'i' : '');
 		foreach (static::toArray($control->getValue()) as $item) {
@@ -282,7 +275,7 @@ class Validator
 	}
 
 
-	public static function validatePatternCaseInsensitive(Control $control, string $pattern): bool
+	public static function validatePatternCaseInsensitive(IControl $control, string $pattern): bool
 	{
 		return self::validatePattern($control, $pattern, true);
 	}
@@ -291,7 +284,7 @@ class Validator
 	/**
 	 * Is a control's value numeric?
 	 */
-	public static function validateNumeric(Control $control): bool
+	public static function validateNumeric(IControl $control): bool
 	{
 		$value = $control->getValue();
 		return (is_int($value) && $value >= 0)
@@ -302,7 +295,7 @@ class Validator
 	/**
 	 * Is a control's value decimal number?
 	 */
-	public static function validateInteger(Control $control): bool
+	public static function validateInteger(IControl $control): bool
 	{
 		if (
 			Validators::isNumericInt($value = $control->getValue())
@@ -318,12 +311,9 @@ class Validator
 	/**
 	 * Is a control's value float number?
 	 */
-	public static function validateFloat(Control $control): bool
+	public static function validateFloat(IControl $control): bool
 	{
-		$value = $control->getValue();
-		if (is_string($value)) {
-			$value = str_replace([' ', ','], ['', '.'], $value);
-		}
+		$value = str_replace([' ', ','], ['', '.'], $control->getValue());
 		if (Validators::isNumeric($value)) {
 			$control->setValue((float) $value);
 			return true;

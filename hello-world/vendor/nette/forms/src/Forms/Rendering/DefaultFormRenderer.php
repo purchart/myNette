@@ -10,14 +10,14 @@ declare(strict_types=1);
 namespace Nette\Forms\Rendering;
 
 use Nette;
-use Nette\HtmlStringable;
 use Nette\Utils\Html;
+use Nette\Utils\IHtmlString;
 
 
 /**
  * Converts a Form into the HTML output.
  */
-class DefaultFormRenderer implements Nette\Forms\FormRenderer
+class DefaultFormRenderer implements Nette\Forms\IFormRenderer
 {
 	use Nette\SmartObject;
 
@@ -213,7 +213,7 @@ class DefaultFormRenderer implements Nette\Forms\FormRenderer
 	/**
 	 * Renders validation errors (per form or per control).
 	 */
-	public function renderErrors(Nette\Forms\Control $control = null, bool $own = true): string
+	public function renderErrors(Nette\Forms\IControl $control = null, bool $own = true): string
 	{
 		$errors = $control
 			? $control->getErrors()
@@ -232,7 +232,7 @@ class DefaultFormRenderer implements Nette\Forms\FormRenderer
 
 		foreach ($errors as $error) {
 			$item = clone $item;
-			if ($error instanceof HtmlStringable) {
+			if ($error instanceof IHtmlString) {
 				$item->addHtml($error);
 			} else {
 				$item->setText($error);
@@ -274,7 +274,7 @@ class DefaultFormRenderer implements Nette\Forms\FormRenderer
 			$s .= "\n" . $container->startTag();
 
 			$text = $group->getOption('label');
-			if ($text instanceof HtmlStringable) {
+			if ($text instanceof IHtmlString) {
 				$s .= $this->getWrapper('group label')->addHtml($text);
 
 			} elseif ($text != null) { // intentionally ==
@@ -285,7 +285,7 @@ class DefaultFormRenderer implements Nette\Forms\FormRenderer
 			}
 
 			$text = $group->getOption('description');
-			if ($text instanceof HtmlStringable) {
+			if ($text instanceof IHtmlString) {
 				$s .= $text;
 
 			} elseif ($text != null) { // intentionally ==
@@ -361,7 +361,7 @@ class DefaultFormRenderer implements Nette\Forms\FormRenderer
 	/**
 	 * Renders single visual row.
 	 */
-	public function renderPair(Nette\Forms\Control $control): string
+	public function renderPair(Nette\Forms\IControl $control): string
 	{
 		$pair = $this->getWrapper('pair container');
 		$pair->addHtml($this->renderLabel($control));
@@ -379,17 +379,17 @@ class DefaultFormRenderer implements Nette\Forms\FormRenderer
 
 	/**
 	 * Renders single visual row of multiple controls.
-	 * @param  Nette\Forms\Control[]  $controls
+	 * @param  Nette\Forms\IControl[]  $controls
 	 */
 	public function renderPairMulti(array $controls): string
 	{
 		$s = [];
 		foreach ($controls as $control) {
-			if (!$control instanceof Nette\Forms\Control) {
-				throw new Nette\InvalidArgumentException('Argument must be array of Nette\Forms\Control instances.');
+			if (!$control instanceof Nette\Forms\IControl) {
+				throw new Nette\InvalidArgumentException('Argument must be array of Nette\Forms\IControl instances.');
 			}
 			$description = $control->getOption('description');
-			if ($description instanceof HtmlStringable) {
+			if ($description instanceof IHtmlString) {
 				$description = ' ' . $description;
 
 			} elseif ($description != null) { // intentionally ==
@@ -422,7 +422,7 @@ class DefaultFormRenderer implements Nette\Forms\FormRenderer
 	/**
 	 * Renders 'label' part of visual row of controls.
 	 */
-	public function renderLabel(Nette\Forms\Control $control): Html
+	public function renderLabel(Nette\Forms\IControl $control): Html
 	{
 		$suffix = $this->getValue('label suffix') . ($control->isRequired() ? $this->getValue('label requiredsuffix') : '');
 		$label = $control->getLabel();
@@ -441,7 +441,7 @@ class DefaultFormRenderer implements Nette\Forms\FormRenderer
 	/**
 	 * Renders 'control' part of visual row of controls.
 	 */
-	public function renderControl(Nette\Forms\Control $control): Html
+	public function renderControl(Nette\Forms\IControl $control): Html
 	{
 		$body = $this->getWrapper('control container');
 		if ($this->counter % 2) {
@@ -453,7 +453,7 @@ class DefaultFormRenderer implements Nette\Forms\FormRenderer
 		}
 
 		$description = $control->getOption('description');
-		if ($description instanceof HtmlStringable) {
+		if ($description instanceof IHtmlString) {
 			$description = ' ' . $description;
 
 		} elseif ($description != null) { // intentionally ==

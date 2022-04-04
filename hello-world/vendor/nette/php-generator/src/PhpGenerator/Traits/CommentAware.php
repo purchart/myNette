@@ -15,10 +15,12 @@ namespace Nette\PhpGenerator\Traits;
  */
 trait CommentAware
 {
-	private ?string $comment = null;
+	/** @var string|null */
+	private $comment;
 
 
-	public function setComment(?string $val): static
+	/** @return static */
+	public function setComment(?string $val): self
 	{
 		$this->comment = $val;
 		return $this;
@@ -31,7 +33,8 @@ trait CommentAware
 	}
 
 
-	public function addComment(string $val): static
+	/** @return static */
+	public function addComment(string $val): self
 	{
 		$this->comment .= $this->comment ? "\n$val" : $val;
 		return $this;

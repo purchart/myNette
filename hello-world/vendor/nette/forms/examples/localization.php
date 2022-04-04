@@ -19,7 +19,7 @@ use Tracy\Dumper;
 Debugger::enable();
 
 
-class MyTranslator implements Nette\Localization\Translator
+class MyTranslator implements Nette\Localization\ITranslator
 {
 	private $table;
 

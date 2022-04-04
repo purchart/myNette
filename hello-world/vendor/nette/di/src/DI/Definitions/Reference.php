@@ -30,7 +30,6 @@ final class Reference
 		if (strpos($value, '\\') === false) {
 			$value = '\\' . $value;
 		}
-
 		return new static($value);
 	}
 

@@ -10,7 +10,6 @@ declare(strict_types=1);
 namespace Nette\PhpGenerator;
 
 
-/** @deprecated  use Nette\PhpGenerator\Literal */
 class PhpLiteral extends Literal
 {
 }

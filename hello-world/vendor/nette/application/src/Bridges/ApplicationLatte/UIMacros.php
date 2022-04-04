@@ -29,9 +29,6 @@ final class UIMacros extends Latte\Macros\MacroSet
 	/** @var bool|string */
 	private $extends;
 
-	/** @var string|null */
-	private $printTemplate;
-
 
 	public static function install(Latte\Compiler $compiler): void
 	{
@@ -47,7 +44,6 @@ final class UIMacros extends Latte\Macros\MacroSet
 		$me->addMacro('extends', [$me, 'macroExtends']);
 		$me->addMacro('layout', [$me, 'macroExtends']);
 		$me->addMacro('nonce', null, null, 'echo $this->global->uiNonce ? " nonce=\"{$this->global->uiNonce}\"" : "";');
-		$me->addMacro('templatePrint', [$me, 'macroTemplatePrint'], null, null, self::ALLOWED_IN_HEAD);
 	}
 
 
@@ -66,10 +62,6 @@ final class UIMacros extends Latte\Macros\MacroSet
 	 */
 	public function finalize()
 	{
-		if ($this->printTemplate) {
-			return ["Nette\\Bridges\\ApplicationLatte\\UIRuntime::printClass(\$this, $this->printTemplate); exit;"];
-		}
-
 		return [$this->extends . 'Nette\Bridges\ApplicationLatte\UIRuntime::initialize($this, $this->parentName, $this->blocks);'];
 	}
 
@@ -82,21 +74,10 @@ final class UIMacros extends Latte\Macros\MacroSet
 	 */
 	public function macroControl(MacroNode $node, PhpWriter $writer)
 	{
-		if ($node->context !== [Latte\Compiler::CONTENT_HTML, Latte\Compiler::CONTEXT_HTML_TEXT]) {
-			$escapeMod = Latte\Helpers::removeFilter($node->modifiers, 'noescape') ? '' : '|escape';
-		}
-
-		if ($node->modifiers) {
-			trigger_error('Modifiers are deprecated in ' . $node->getNotation(), E_USER_DEPRECATED);
-		}
-
-		$node->modifiers .= $escapeMod ?? '';
-
 		$words = $node->tokenizer->fetchWords();
 		if (!$words) {
 			throw new CompileException('Missing control name in {control}');
 		}
-
 		$name = $writer->formatWord($words[0]);
 		$method = ucfirst($words[1] ?? '');
 		$method = Strings::match($method, '#^\w*$#D')
@@ -105,27 +86,24 @@ final class UIMacros extends Latte\Macros\MacroSet
 
 		$tokens = $node->tokenizer;
 		$pos = $tokens->position;
-		$wrap = false;
+		$param = $writer->formatArray();
+		$tokens->position = $pos;
 		while ($tokens->nextToken()) {
-			if ($tokens->isCurrent('=>', '(expand)') && !$tokens->depth) {
+			if ($tokens->isCurrent('=>') && !$tokens->depth) {
 				$wrap = true;
 				break;
 			}
 		}
-
-		$tokens->position = $pos;
-		$param = $wrap ? $writer->formatArray() : $writer->formatArgs();
-
+		if (empty($wrap) && $param[0] === '[') {
+			$param = substr($param, 1, -1); // removes array() or []
+		}
 		return "/* line $node->startLine */ "
 			. ($name[0] === '$' ? "if (is_object($name)) \$_tmp = $name; else " : '')
 			. '$_tmp = $this->global->uiControl->getComponent(' . $name . '); '
-			. 'if ($_tmp instanceof Nette\Application\UI\Renderable) $_tmp->redrawControl(null, false); '
+			. 'if ($_tmp instanceof Nette\Application\UI\IRenderable) $_tmp->redrawControl(null, false); '
 			. ($node->modifiers === ''
 				? "\$_tmp->$method($param);"
-				: $writer->write(
-					"ob_start(function () {}); \$_tmp->$method($param); \$ʟ_fi = new LR\\FilterInfo(%var); echo %modifyContent(ob_get_clean());",
-					Latte\Engine::CONTENT_HTML
-				)
+				: $writer->write("ob_start(function () {}); \$_tmp->$method($param); echo %modify(ob_get_clean());")
 			);
 	}
 
@@ -143,7 +121,6 @@ final class UIMacros extends Latte\Macros\MacroSet
 				'echo %escape(%modify('
 				. ($node->name === 'plink' ? '$this->global->uiPresenter' : '$this->global->uiControl')
 				. '->link(%node.word, %node.array?)))'
-				. ($node->startLine ? " /* line $node->startLine */;" : ';')
 			);
 	}
 
@@ -156,7 +133,6 @@ final class UIMacros extends Latte\Macros\MacroSet
 		if ($node->modifiers) {
 			throw new CompileException('Modifiers are not allowed in ' . $node->getNotation());
 		}
-
 		return $writer->write(
 			$node->args
 				? 'if ($this->global->uiPresenter->isLinkCurrent(%node.word, %node.array?)) {'
@@ -173,20 +149,6 @@ final class UIMacros extends Latte\Macros\MacroSet
 		if ($node->modifiers || $node->parentNode || $node->args !== 'auto') {
 			return $this->extends = false;
 		}
-
 		$this->extends = $writer->write('$this->parentName = $this->global->uiPresenter->findLayoutTemplateFile();');
-	}
-
-
-	/**
-	 * {templatePrint [parentClass | default]}
-	 */
-	public function macroTemplatePrint(MacroNode $node): void
-	{
-		if ($node->modifiers) {
-			throw new CompileException('Modifiers are not allowed in ' . $node->getNotation());
-		}
-
-		$this->printTemplate = var_export($node->tokenizer->fetchWord() ?: null, true);
 	}
 }

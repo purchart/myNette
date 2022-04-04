@@ -11,8 +11,7 @@ namespace Nette\Security;
 
 
 /**
- * @deprecated  update to Nette\Security\Authenticator
- * @method IIdentity authenticate(array $credentials)
+ * Performs authentication.
  */
 interface IAuthenticator
 {
@@ -33,5 +32,5 @@ interface IAuthenticator
 	 * and returns IIdentity on success or throws AuthenticationException
 	 * @throws AuthenticationException
 	 */
-	//function authenticate(array $credentials): IIdentity;
+	function authenticate(array $credentials): IIdentity;
 }

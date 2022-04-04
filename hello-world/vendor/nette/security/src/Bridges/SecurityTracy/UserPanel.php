@@ -35,14 +35,12 @@ class UserPanel implements Tracy\IBarPanel
 	 */
 	public function getTab(): ?string
 	{
-		if (!session_id()) {
+		if (headers_sent() && !session_id()) {
 			return null;
 		}
 
 		return Nette\Utils\Helpers::capture(function () {
-			$status = session_status() === PHP_SESSION_ACTIVE
-				? $this->user->isLoggedIn()
-				: '?';
+			$user = $this->user;
 			require __DIR__ . '/templates/UserPanel.tab.phtml';
 		});
 	}
@@ -51,11 +49,8 @@ class UserPanel implements Tracy\IBarPanel
 	/**
 	 * Renders panel.
 	 */
-	public function getPanel(): ?string
+	public function getPanel(): string
 	{
-		if (session_status() !== PHP_SESSION_ACTIVE) {
-			return null;
-		}
 		return Nette\Utils\Helpers::capture(function () {
 			$user = $this->user;
 			require __DIR__ . '/templates/UserPanel.panel.phtml';

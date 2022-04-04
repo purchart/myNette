@@ -16,25 +16,25 @@
 	],
 	"require": {
 		"php": ">=7.1",
+		"ext-iconv": "*",
 		"ext-json": "*"
 	},
 	"require-dev": {
 		"nette/tester": "^2.0",
-		"tracy/tracy": "^2.7",
+		"tracy/tracy": "^2.3",
 		"phpstan/phpstan": "^0.12"
 	},
 	"autoload": {
 		"classmap": ["src/"]
 	},
 	"minimum-stability": "dev",
-	"bin": ["bin/neon-lint"],
 	"scripts": {
-		"phpstan": "phpstan analyse",
+		"phpstan": "phpstan analyse --level 5 src",
 		"tester": "tester tests -s"
 	},
 	"extra": {
 		"branch-alias": {
-			"dev-master": "3.3-dev"
+			"dev-master": "3.2-dev"
 		}
 	}
 }

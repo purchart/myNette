@@ -46,7 +46,10 @@ class Passwords
 			throw new Nette\InvalidArgumentException('Password can not be empty.');
 		}
 
-		$hash = @password_hash($password, $this->algo, $this->options); // @ is escalated to exception
+		$hash = isset($this)
+			? @password_hash($password, $this->algo, $this->options) // @ is escalated to exception
+			: @password_hash($password, PASSWORD_BCRYPT, func_get_args()[1] ?? []); // back compatibility with v2.x
+
 		if (!$hash) {
 			throw new Nette\InvalidStateException('Computed hash is invalid. ' . error_get_last()['message']);
 		}
@@ -68,6 +71,8 @@ class Passwords
 	 */
 	public function needsRehash(string $hash): bool
 	{
-		return password_needs_rehash($hash, $this->algo, $this->options);
+		return isset($this)
+			? password_needs_rehash($hash, $this->algo, $this->options)
+			: password_needs_rehash($hash, PASSWORD_BCRYPT, func_get_args()[1] ?? []); // back compatibility with v2.x
 	}
 }

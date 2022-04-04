@@ -42,7 +42,6 @@ final class Helpers
 			unset($data[self::PREVENT_MERGING]);
 			return true;
 		}
-
 		return false;
 	}
 }

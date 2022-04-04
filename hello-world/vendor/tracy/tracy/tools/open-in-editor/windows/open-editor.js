@@ -25,9 +25,6 @@ var settings = {
 	// Sublime Text 2
 	// editor: '"C:\\Program Files\\Sublime Text 2\\sublime_text.exe" "%file%:%line%"',
 
-	// Visual Studio Code / VSCodium
-	// editor: '"C:\\Program Files\\Microsoft VS Code\\Code.exe" --goto "%file%:%line%"',
-
 	mappings: {
 		// '/remotepath': '/localpath'
 	}
@@ -68,7 +65,7 @@ for (var id in settings.mappings) {
 
 if (action === 'create' && !fileSystem.FileExists(file)) {
 	shell.Run('cmd /c mkdir "' + fileSystem.GetParentFolderName(file) + '"', 0, 1);
-	fileSystem.CreateTextFile(file).Write(replace);
+	fileSystem.CreateTextFile(file);
 
 } else if (action === 'fix') {
 	var lines = fileSystem.OpenTextFile(file).ReadAll().split('\n');

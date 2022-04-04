@@ -15,7 +15,7 @@ use Nette;
 /**
  * Supplemental MySQL database driver.
  */
-class MySqlDriver implements Nette\Database\Driver
+class MySqlDriver implements Nette\Database\ISupplementalDriver
 {
 	use Nette\SmartObject;
 
@@ -41,7 +41,6 @@ class MySqlDriver implements Nette\Database\Driver
 		if ($charset) {
 			$connection->query('SET NAMES ?', $charset);
 		}
-
 		if (isset($options['sqlmode'])) {
 			$connection->query('SET sql_mode=?', $options['sqlmode']);
 		}
@@ -124,7 +123,6 @@ class MySqlDriver implements Nette\Database\Driver
 				'view' => ($row[1] ?? null) === 'VIEW',
 			];
 		}
-
 		return $tables;
 	}
 
@@ -147,7 +145,6 @@ class MySqlDriver implements Nette\Database\Driver
 				'vendor' => (array) $row,
 			];
 		}
-
 		return $columns;
 	}
 
@@ -156,13 +153,12 @@ class MySqlDriver implements Nette\Database\Driver
 	{
 		$indexes = [];
 		foreach ($this->connection->query('SHOW INDEX FROM ' . $this->delimite($table)) as $row) {
-			$id = $row['Key_name'];
-			$indexes[$id]['name'] = $id;
-			$indexes[$id]['unique'] = !$row['Non_unique'];
-			$indexes[$id]['primary'] = $row['Key_name'] === 'PRIMARY';
-			$indexes[$id]['columns'][$row['Seq_in_index'] - 1] = $row['Column_name'];
+			$row = array_change_key_case((array) $row, CASE_LOWER);
+			$indexes[$row['key_name']]['name'] = $row['key_name'];
+			$indexes[$row['key_name']]['unique'] = !$row['non_unique'];
+			$indexes[$row['key_name']]['primary'] = $row['key_name'] === 'PRIMARY';
+			$indexes[$row['key_name']]['columns'][$row['seq_in_index'] - 1] = $row['column_name'];
 		}
-
 		return array_values($indexes);
 	}
 
@@ -174,10 +170,11 @@ class MySqlDriver implements Nette\Database\Driver
 			. 'WHERE TABLE_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME IS NOT NULL AND TABLE_NAME = ' . $this->connection->quote($table);
 
 		foreach ($this->connection->query($query) as $id => $row) {
-			$keys[$id]['name'] = $row['CONSTRAINT_NAME'];
-			$keys[$id]['local'] = $row['COLUMN_NAME'];
-			$keys[$id]['table'] = $row['REFERENCED_TABLE_NAME'];
-			$keys[$id]['foreign'] = $row['REFERENCED_COLUMN_NAME'];
+			$row = array_change_key_case((array) $row, CASE_LOWER);
+			$keys[$id]['name'] = $row['constraint_name']; // foreign key name
+			$keys[$id]['local'] = $row['column_name']; // local columns
+			$keys[$id]['table'] = $row['referenced_table_name']; // referenced table
+			$keys[$id]['foreign'] = $row['referenced_column_name']; // referenced columns
 		}
 
 		return array_values($keys);
@@ -197,7 +194,6 @@ class MySqlDriver implements Nette\Database\Driver
 				}
 			}
 		}
-
 		return $types;
 	}
 

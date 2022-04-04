@@ -10,8 +10,8 @@ declare(strict_types=1);
 namespace Nette\Database\Table;
 
 use Nette;
-use Nette\Database\Conventions;
-use Nette\Database\Explorer;
+use Nette\Database\Context;
+use Nette\Database\IConventions;
 
 
 /**
@@ -37,16 +37,16 @@ class GroupedSelection extends Selection
 	 * Creates filtered and grouped table representation.
 	 */
 	public function __construct(
-		Explorer $explorer,
-		Conventions $conventions,
+		Context $context,
+		IConventions $conventions,
 		string $tableName,
 		string $column,
 		Selection $refTable,
-		?Nette\Caching\IStorage $cacheStorage = null
+		Nette\Caching\IStorage $cacheStorage = null
 	) {
 		$this->refTable = $refTable;
 		$this->column = $column;
-		parent::__construct($explorer, $conventions, $tableName, $cacheStorage);
+		parent::__construct($context, $conventions, $tableName, $cacheStorage);
 	}
 
 
@@ -96,7 +96,7 @@ class GroupedSelection extends Selection
 	/**
 	 * @return mixed
 	 */
-	public function aggregation(string $function, ?string $groupFunction = null)
+	public function aggregation(string $function)
 	{
 		$aggregation = &$this->getRefTable($refPath)->aggregation[$refPath . $function . $this->sqlBuilder->getSelectQueryHash($this->getPreviousAccessedColumns())];
 
@@ -105,21 +105,12 @@ class GroupedSelection extends Selection
 
 			$selection = $this->createSelectionInstance();
 			$selection->getSqlBuilder()->importConditions($this->getSqlBuilder());
+			$selection->select($function);
+			$selection->select("$this->name.$this->column");
+			$selection->group("$this->name.$this->column");
 
-			if ($groupFunction && $selection->getSqlBuilder()->importGroupConditions($this->getSqlBuilder())) {
-				$selection->select("$function AS aggregate, $this->name.$this->column AS groupname");
-				$selection->group($selection->getSqlBuilder()->getGroup() . ", $this->name.$this->column");
-				$query = "SELECT $groupFunction(aggregate) AS groupaggregate, groupname FROM (" . $selection->getSql() . ') AS aggregates GROUP BY groupname';
-				foreach ($this->context->query($query, ...$selection->getSqlBuilder()->getParameters()) as $row) {
-					$aggregation[$row->groupname] = $row;
-				}
-			} else {
-				$selection->select($function);
-				$selection->select("$this->name.$this->column");
-				$selection->group("$this->name.$this->column");
-				foreach ($selection as $row) {
-					$aggregation[$row[$this->column]] = $row;
-				}
+			foreach ($selection as $row) {
+				$aggregation[$row[$this->column]] = $row;
 			}
 		}
 
@@ -128,12 +119,11 @@ class GroupedSelection extends Selection
 				return $val;
 			}
 		}
-
 		return 0;
 	}
 
 
-	public function count(?string $column = null): int
+	public function count(string $column = null): int
 	{
 		$return = parent::count($column);
 		return $return ?? 0;
@@ -162,7 +152,6 @@ class GroupedSelection extends Selection
 			if ($limit && $rows > 1) {
 				$this->sqlBuilder->setLimit(null, null);
 			}
-
 			parent::execute();
 			$this->sqlBuilder->setLimit($limit, null);
 			$data = [];
@@ -181,7 +170,6 @@ class GroupedSelection extends Selection
 				} else {
 					unset($this->rows[$key]);
 				}
-
 				$skip++;
 				unset($ref, $skip);
 			}
@@ -197,7 +185,6 @@ class GroupedSelection extends Selection
 			foreach ($this->data as $row) {
 				$row->setTable($this); // injects correct parent GroupedSelection
 			}
-
 			reset($this->data);
 		}
 	}

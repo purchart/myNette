@@ -44,7 +44,6 @@ final class PresenterFactoryCallback
 			if (count($exact) === 1) {
 				return $this->container->createService($services[$exact[0]]);
 			}
-
 			throw new Nette\Application\InvalidPresenterException("Multiple services of type $class found: " . implode(', ', $services) . '.');
 
 		} elseif (!$services) {
@@ -59,14 +58,12 @@ final class PresenterFactoryCallback
 				if ($this->touchToRefresh && class_exists($class)) {
 					throw new \Exception("Refresh your browser. New presenter $class was found.", 0, $e);
 				}
-
 				throw $e;
 			}
 
 			if ($presenter instanceof Nette\Application\UI\Presenter && $presenter->invalidLinkMode === null) {
 				$presenter->invalidLinkMode = $this->invalidLinkMode;
 			}
-
 			return $presenter;
 		}
 

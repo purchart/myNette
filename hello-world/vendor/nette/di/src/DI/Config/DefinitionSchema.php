@@ -39,24 +39,20 @@ class DefinitionSchema implements Schema
 		if ($def === [false]) {
 			return (object) $def;
 		}
-
 		if (Helpers::takeParent($def)) {
 			$def['reset']['all'] = true;
 		}
-
 		foreach (['arguments', 'setup', 'tags'] as $k) {
 			if (isset($def[$k]) && Helpers::takeParent($def[$k])) {
 				$def['reset'][$k] = true;
 			}
 		}
-
 		$def = $this->expandParameters($def);
 		$type = $this->sniffType(end($context->path), $def);
 		$def = $this->getSchema($type)->complete($def, $context);
 		if ($def) {
 			$def->defType = $type;
 		}
-
 		return $def;
 	}
 
@@ -66,7 +62,6 @@ class DefinitionSchema implements Schema
 		if (!empty($def['alteration'])) {
 			unset($def['alteration']);
 		}
-
 		return Nette\Schema\Helpers::merge($def, $base);
 	}
 
@@ -86,27 +81,21 @@ class DefinitionSchema implements Schema
 			$res = ['implement' => $def->getEntity()];
 			if (array_keys($def->arguments) === ['tagged']) {
 				$res += $def->arguments;
-			} elseif (array_keys($def->arguments) === [0]) {
-				$res['factory'] = $def->arguments[0];
-			} elseif ($def->arguments) {
+			} elseif (count($def->arguments) > 1) {
 				$res['references'] = $def->arguments;
+			} elseif ($factory = array_shift($def->arguments)) {
+				$res['factory'] = $factory;
 			}
-
 			return $res;
 
 		} elseif (!is_array($def) || isset($def[0], $def[1])) {
 			return ['factory' => $def];
 
 		} elseif (is_array($def)) {
-			if (isset($def['create']) && !isset($def['factory'])) {
-				$def['factory'] = $def['create'];
-				unset($def['create']);
-			}
-
 			if (isset($def['class']) && !isset($def['type'])) {
 				if ($def['class'] instanceof Statement) {
 					$key = end($context->path);
-					trigger_error(sprintf("Service '%s': option 'class' should be changed to 'factory'.", $key), E_USER_DEPRECATED);
+					trigger_error("Service '$key': option 'class' should be changed to 'factory'.", E_USER_DEPRECATED);
 					$def['factory'] = $def['class'];
 					unset($def['class']);
 				} elseif (!isset($def['factory']) && !isset($def['dynamic']) && !isset($def['imported'])) {
@@ -118,14 +107,8 @@ class DefinitionSchema implements Schema
 			foreach (['class' => 'type', 'dynamic' => 'imported'] as $alias => $original) {
 				if (array_key_exists($alias, $def)) {
 					if (array_key_exists($original, $def)) {
-						throw new Nette\DI\InvalidConfigurationException(sprintf(
-							"Options '%s' and '%s' are aliases, use only '%s'.",
-							$alias,
-							$original,
-							$original
-						));
+						throw new Nette\DI\InvalidConfigurationException("Options '$alias' and '$original' are aliases, use only '$original'.");
 					}
-
 					$def[$original] = $def[$alias];
 					unset($def[$alias]);
 				}
@@ -167,9 +150,6 @@ class DefinitionSchema implements Schema
 		} elseif (isset($def['imported'])) {
 			return Definitions\ImportedDefinition::class;
 
-		} elseif (!$def) {
-			throw new Nette\DI\InvalidConfigurationException("Service '$key': Empty definition.");
-
 		} else {
 			return Definitions\ServiceDefinition::class;
 		}
@@ -185,7 +165,6 @@ class DefinitionSchema implements Schema
 				$params[end($v)] = $this->builder::literal('$' . end($v));
 			}
 		}
-
 		return Nette\DI\Helpers::expand($config, $params);
 	}
 

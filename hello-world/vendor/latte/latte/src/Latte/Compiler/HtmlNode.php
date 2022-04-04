@@ -23,10 +23,10 @@ class HtmlNode
 	/** @var bool */
 	public $empty;
 
-	/** @var string[] */
+	/** @var array */
 	public $attrs = [];
 
-	/** @var string[] */
+	/** @var array */
 	public $macroAttrs = [];
 
 	/** @var bool */
@@ -44,17 +44,13 @@ class HtmlNode
 	/** @var int  position of end tag in source template */
 	public $endLine;
 
-	/** @var \stdClass  user data */
-	public $data;
-
 	/** @var string @internal */
 	public $innerMarker;
 
 
-	public function __construct(string $name, ?self $parentNode = null)
+	public function __construct(string $name, self $parentNode = null)
 	{
 		$this->name = $name;
 		$this->parentNode = $parentNode;
-		$this->data = new \stdClass;
 	}
 }

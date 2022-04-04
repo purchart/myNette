@@ -18,13 +18,13 @@ class TokenIterator
 {
 	use Strict;
 
-	/** @var array<array{string, int, int}> */
+	/** @var array */
 	public $tokens;
 
 	/** @var int */
 	public $position = -1;
 
-	/** @var int[] */
+	/** @var array */
 	public $ignored = [];
 
 
@@ -39,7 +39,6 @@ class TokenIterator
 
 	/**
 	 * Returns current token.
-	 * @return ?array{string, int, int}
 	 */
 	public function currentToken(): ?array
 	{
@@ -59,7 +58,6 @@ class TokenIterator
 	/**
 	 * Returns next token.
 	 * @param  int|string  ...$args  desired token type or value
-	 * @return ?array{string, int, int}
 	 */
 	public function nextToken(...$args): ?array
 	{
@@ -80,7 +78,7 @@ class TokenIterator
 	/**
 	 * Returns all next tokens.
 	 * @param  int|string  ...$args  desired token type or value
-	 * @return array<array{string, int, int}>
+	 * @return array[]
 	 */
 	public function nextAll(...$args): array
 	{
@@ -91,7 +89,7 @@ class TokenIterator
 	/**
 	 * Returns all next tokens until it sees a given token type or value.
 	 * @param  int|string  ...$args  token type or value to stop before (required)
-	 * @return array<array{string, int, int}>
+	 * @return array[]
 	 */
 	public function nextUntil(...$args): array
 	{
@@ -128,7 +126,6 @@ class TokenIterator
 		if (!isset($this->tokens[$this->position])) {
 			return false;
 		}
-
 		$token = $this->tokens[$this->position];
 		return in_array($token[Tokenizer::VALUE], $args, true)
 			|| in_array($token[Tokenizer::TYPE], $args, true);
@@ -165,12 +162,10 @@ class TokenIterator
 		if ($token = $this->scan($args, true, true)) { // onlyFirst, advance
 			return $token[Tokenizer::VALUE];
 		}
-
 		$pos = $this->position + 1;
 		while (($next = $this->tokens[$pos] ?? null) && in_array($next[Tokenizer::TYPE], $this->ignored, true)) {
 			$pos++;
 		}
-
 		throw new CompileException($next ? "Unexpected token '" . $next[Tokenizer::VALUE] . "'." : 'Unexpected end.');
 	}
 
@@ -194,7 +189,7 @@ class TokenIterator
 
 	/**
 	 * Looks for (first) (not) wanted tokens.
-	 * @param  array<int|string>  $wanted  of desired token types or values
+	 * @param  array  $wanted  of desired token types or values
 	 * @return mixed
 	 */
 	protected function scan(
@@ -209,9 +204,6 @@ class TokenIterator
 		$pos = $this->position + ($prev ? -1 : 1);
 		do {
 			if (!isset($this->tokens[$pos])) {
-				if (!$wanted && $advance && !$prev && $pos <= count($this->tokens)) {
-					$this->next();
-				}
 				return $res;
 			}
 
@@ -234,10 +226,10 @@ class TokenIterator
 				} else {
 					$res[] = $token;
 				}
+
 			} elseif ($until || !in_array($token[Tokenizer::TYPE], $this->ignored, true)) {
 				return $res;
 			}
-
 			$pos += $prev ? -1 : 1;
 		} while (true);
 	}

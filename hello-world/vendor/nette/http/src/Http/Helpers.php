@@ -21,7 +21,7 @@ final class Helpers
 	use Nette\StaticClass;
 
 	/** @internal */
-	public const STRICT_COOKIE_NAME = '_nss';
+	public const STRICT_COOKIE_NAME = 'nette-samesite';
 
 
 	/**
@@ -54,6 +54,8 @@ final class Helpers
 
 	public static function initCookie(IRequest $request, IResponse $response)
 	{
-		$response->setCookie(self::STRICT_COOKIE_NAME, '1', 0, '/', null, null, true, IResponse::SAME_SITE_STRICT);
+		if (!$request->getCookie(self::STRICT_COOKIE_NAME)) {
+			$response->setCookie(self::STRICT_COOKIE_NAME, '1', 0, '/', null, null, true, 'Strict');
+		}
 	}
 }

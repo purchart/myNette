@@ -49,11 +49,11 @@ use Tracy\Helpers;
 		<?php $name = (string) $name ?>
 		<?php $autowired = in_array($name, array_merge($wiring[$type][0] ?? [], $wiring[$type][1] ?? []), true) ?>
 		<tr>
-			<td class="<?= isset($instances[$name]) ? 'created' : '' ?>"><?= is_numeric($name) ? "<small>$name</small>" : Helpers::escapeHtml($name) ?></td>
+			<td class="<?= isset($instances[$name]) ? 'created' : '' ?>"><?= is_numeric($name) ? "<span title='$name'>–</span>" : Helpers::escapeHtml($name) ?></td>
 			<td class="<?= $autowired ? 'yes' : '' ?>"><?= $autowired ? 'yes' : (isset($wiring[$type]) ? 'no' : '?') ?></td>
 			<td>
 				<?php if (isset($instances[$name]) && !$instances[$name] instanceof Nette\DI\Container): ?>
-					<?= Dumper::toHtml($instances[$name], [Dumper::COLLAPSE => true, Dumper::LIVE => true, Dumper::DEPTH => 5]); ?>
+					<?= Dumper::toHtml($instances[$name], [Dumper::COLLAPSE => true, Dumper::LIVE => true]); ?>
 				<?php elseif (isset($instances[$name])): ?>
 					<code><?= get_class($instances[$name]) ?></code>
 				<?php elseif (is_string($type)): ?>

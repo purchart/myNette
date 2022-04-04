@@ -40,9 +40,9 @@ final class ApplicationExtension extends Nette\DI\CompilerExtension
 
 	public function __construct(
 		bool $debugMode = false,
-		?array $scanDirs = null,
-		?string $tempDir = null,
-		?Nette\Loaders\RobotLoader $robotLoader = null
+		array $scanDirs = null,
+		string $tempDir = null,
+		Nette\Loaders\RobotLoader $robotLoader = null
 	) {
 		$this->debugMode = $debugMode;
 		$this->scanDirs = (array) $scanDirs;
@@ -56,14 +56,11 @@ final class ApplicationExtension extends Nette\DI\CompilerExtension
 		return Expect::structure([
 			'debugger' => Expect::bool(),
 			'errorPresenter' => Expect::string('Nette:Error')->dynamic(),
-			'catchExceptions' => Expect::bool()->dynamic(),
+			'catchExceptions' => Expect::bool(!$this->debugMode)->dynamic(),
 			'mapping' => Expect::arrayOf('string|array'),
-			'scanDirs' => Expect::anyOf(
-				Expect::arrayOf('string')->default($this->scanDirs)->mergeDefaults(),
-				false
-			)->firstIsDefault(),
+			'scanDirs' => Expect::anyOf(Expect::arrayOf('string'), false)->default($this->scanDirs),
 			'scanComposer' => Expect::bool(class_exists(ClassLoader::class)),
-			'scanFilter' => Expect::string('*Presenter'),
+			'scanFilter' => Expect::string('Presenter'),
 			'silentLinks' => Expect::bool(),
 		]);
 	}
@@ -81,7 +78,7 @@ final class ApplicationExtension extends Nette\DI\CompilerExtension
 
 		$builder->addDefinition($this->prefix('application'))
 			->setFactory(Nette\Application\Application::class)
-			->addSetup('$catchExceptions', [$this->debugMode ? $config->catchExceptions : true])
+			->addSetup('$catchExceptions', [$config->catchExceptions])
 			->addSetup('$errorPresenter', [$config->errorPresenter]);
 
 		$this->compiler->addExportedType(Nette\Application\Application::class);
@@ -91,7 +88,6 @@ final class ApplicationExtension extends Nette\DI\CompilerExtension
 			Nette\Utils\FileSystem::createDir($this->tempDir);
 			$this->getContainerBuilder()->addDependency($touch);
 		}
-
 		$presenterFactory = $builder->addDefinition($this->prefix('presenterFactory'))
 			->setType(Nette\Application\IPresenterFactory::class)
 			->setFactory(Nette\Application\PresenterFactory::class, [new Definitions\Statement(
@@ -121,7 +117,7 @@ final class ApplicationExtension extends Nette\DI\CompilerExtension
 
 		if ($this->config->debugger ?? $builder->getByType(Tracy\BlueScreen::class)) {
 			$builder->getDefinition($this->prefix('application'))
-				->addSetup([self::class, 'initializeBlueScreenPanel']);
+				->addSetup([Nette\Bridges\ApplicationTracy\RoutingPanel::class, 'initializePanel']);
 		}
 
 		$all = [];
@@ -145,7 +141,6 @@ final class ApplicationExtension extends Nette\DI\CompilerExtension
 			if (is_subclass_of($def->getType(), UI\Presenter::class) && $def instanceof Definitions\ServiceDefinition) {
 				$def->addSetup('$invalidLinkMode', [$this->invalidLinkMode]);
 			}
-
 			$this->compiler->addExportedType($def->getType());
 		}
 	}
@@ -159,16 +154,16 @@ final class ApplicationExtension extends Nette\DI\CompilerExtension
 			if (!class_exists(Nette\Loaders\RobotLoader::class)) {
 				throw new Nette\NotSupportedException("RobotLoader is required to find presenters, install package `nette/robot-loader` or disable option {$this->prefix('scanDirs')}: false");
 			}
-
 			$robot = new Nette\Loaders\RobotLoader;
 			$robot->addDirectory(...$config->scanDirs);
-			$robot->acceptFiles = [$config->scanFilter . '.php'];
+			$robot->acceptFiles = ['*' . $config->scanFilter . '*.php'];
 			if ($this->tempDir) {
 				$robot->setTempDirectory($this->tempDir);
 				$robot->refresh();
 			} else {
 				$robot->rebuild();
 			}
+
 		} elseif ($this->robotLoader && $config->scanDirs !== false) {
 			$robot = $this->robotLoader;
 			$robot->refresh();
@@ -193,7 +188,7 @@ final class ApplicationExtension extends Nette\DI\CompilerExtension
 		$presenters = [];
 		foreach (array_unique($classes) as $class) {
 			if (
-				fnmatch($config->scanFilter, $class)
+				strpos($class, $config->scanFilter) !== false
 				&& class_exists($class)
 				&& ($rc = new \ReflectionClass($class))
 				&& $rc->implementsInterface(Nette\Application\IPresenter::class)
@@ -202,46 +197,6 @@ final class ApplicationExtension extends Nette\DI\CompilerExtension
 				$presenters[] = $rc->getName();
 			}
 		}
-
 		return $presenters;
-	}
-
-
-	/** @internal */
-	public static function initializeBlueScreenPanel(
-		Tracy\BlueScreen $blueScreen,
-		Nette\Application\Application $application
-	): void {
-		$blueScreen->addPanel(function (?\Throwable $e) use ($application, $blueScreen): ?array {
-			$dumper = $blueScreen->getDumper();
-			return $e ? null : [
-				'tab' => 'Nette Application',
-				'panel' => '<h3>Requests</h3>' . $dumper($application->getRequests())
-					. '<h3>Presenter</h3>' . $dumper($application->getPresenter()),
-			];
-		});
-		if (
-			version_compare(Tracy\Debugger::VERSION, '2.9.0', '>=')
-			&& version_compare(Tracy\Debugger::VERSION, '3.0', '<')
-		) {
-			$blueScreen->addFileGenerator([self::class, 'generateNewPresenterFileContents']);
-		}
-	}
-
-
-	public static function generateNewPresenterFileContents(string $file, ?string $class = null): ?string
-	{
-		if (!$class || substr($file, -13) !== 'Presenter.php') {
-			return null;
-		}
-
-		$res = "<?php\n\ndeclare(strict_types=1);\n\n";
-
-		if ($pos = strrpos($class, '\\')) {
-			$res .= 'namespace ' . substr($class, 0, $pos) . ";\n\n";
-			$class = substr($class, $pos + 1);
-		}
-
-		return $res . "use Nette;\n\n\nclass $class extends Nette\\Application\\UI\\Presenter\n{\n\$END\$\n}\n";
 	}
 }

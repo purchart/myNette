@@ -10,7 +10,9 @@ declare(strict_types=1);
 namespace Nette\DI\Definitions;
 
 use Nette;
+use Nette\DI\Definitions\Reference;
 use Nette\DI\ServiceCreationException;
+use Nette\PhpGenerator\Helpers as PhpHelpers;
 
 
 /**
@@ -45,7 +47,6 @@ final class ServiceDefinition extends Definition
 				$this->setFactory($type, $args);
 			}
 		}
-
 		return $this;
 	}
 
@@ -63,30 +64,12 @@ final class ServiceDefinition extends Definition
 	 */
 	public function setFactory($factory, array $args = [])
 	{
-		return $this->setCreator($factory, $args);
-	}
-
-
-	public function getFactory(): Statement
-	{
-		return $this->getCreator();
-	}
-
-
-	/**
-	 * @param  string|array|Definition|Reference|Statement  $factory
-	 * @return static
-	 */
-	public function setCreator($factory, array $args = [])
-	{
-		$this->factory = $factory instanceof Statement
-			? $factory
-			: new Statement($factory, $args);
+		$this->factory = $factory instanceof Statement ? $factory : new Statement($factory, $args);
 		return $this;
 	}
 
 
-	public function getCreator(): Statement
+	public function getFactory(): Statement
 	{
 		return $this->factory;
 	}
@@ -126,7 +109,6 @@ final class ServiceDefinition extends Definition
 				throw new Nette\InvalidArgumentException('Argument must be Nette\DI\Definitions\Statement[].');
 			}
 		}
-
 		$this->setup = $setup;
 		return $this;
 	}
@@ -145,9 +127,7 @@ final class ServiceDefinition extends Definition
 	 */
 	public function addSetup($entity, array $args = [])
 	{
-		$this->setup[] = $entity instanceof Statement
-			? $entity
-			: new Statement($entity, $args);
+		$this->setup[] = $entity instanceof Statement ? $entity : new Statement($entity, $args);
 		return $this;
 	}
 
@@ -195,15 +175,13 @@ final class ServiceDefinition extends Definition
 			if (!$this->getType()) {
 				throw new ServiceCreationException('Factory and type are missing in definition of service.');
 			}
-
 			$this->setFactory($this->getType(), $this->factory->arguments ?? []);
 
 		} elseif (!$this->getType()) {
 			$type = $resolver->resolveEntityType($this->factory);
 			if (!$type) {
-				throw new ServiceCreationException('Unknown service type, specify it or declare return type of factory method.');
+				throw new ServiceCreationException('Unknown service type, specify it or declare return type of factory.');
 			}
-
 			$this->setType($type);
 			$resolver->addDependency(new \ReflectionClass($type));
 		}
@@ -226,13 +204,9 @@ final class ServiceDefinition extends Definition
 		$this->factory = $resolver->completeStatement($this->factory);
 
 		foreach ($this->setup as &$setup) {
-			if (
-				is_string($setup->getEntity())
-				&& strpbrk($setup->getEntity(), ':@?\\') === false
-			) { // auto-prepend @self
+			if (is_string($setup->getEntity()) && strpbrk($setup->getEntity(), ':@?\\') === false) { // auto-prepend @self
 				$setup = new Statement([new Reference(Reference::SELF), $setup->getEntity()], $setup->arguments);
 			}
-
 			$setup = $resolver->completeStatement($setup, true);
 		}
 	}
@@ -248,6 +222,18 @@ final class ServiceDefinition extends Definition
 		}
 
 		$code = '$service = ' . $code;
+		$type = $this->getType();
+		if (
+			$type !== $entity
+			&& !(is_array($entity) && $entity[0] instanceof Reference && $entity[0]->getValue() === Nette\DI\ContainerBuilder::THIS_CONTAINER)
+			&& !(is_string($entity) && preg_match('#^[\w\\\\]+$#D', $entity) && is_subclass_of($entity, $type))
+		) {
+			$code .= PhpHelpers::formatArgs("if (!\$service instanceof $type) {\n"
+				. "\tthrow new Nette\\UnexpectedValueException(?);\n}\n",
+				["Unable to create service '{$this->getName()}', value returned by factory is not $type type."]
+			);
+		}
+
 		foreach ($this->setup as $setup) {
 			$code .= $generator->formatStatement($setup) . ";\n";
 		}

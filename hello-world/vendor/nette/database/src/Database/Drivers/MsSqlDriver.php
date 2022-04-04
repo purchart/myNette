@@ -15,7 +15,7 @@ use Nette;
 /**
  * Supplemental MS SQL database driver.
  */
-class MsSqlDriver implements Nette\Database\Driver
+class MsSqlDriver implements Nette\Database\ISupplementalDriver
 {
 	use Nette\SmartObject;
 
@@ -93,7 +93,6 @@ class MsSqlDriver implements Nette\Database\Driver
 				'view' => ($row['TABLE_TYPE'] ?? null) === 'VIEW',
 			];
 		}
-
 		return $tables;
 	}
 
@@ -132,7 +131,6 @@ class MsSqlDriver implements Nette\Database\Driver
 				'vendor' => (array) $row,
 			];
 		}
-
 		return $columns;
 	}
 
@@ -160,13 +158,11 @@ class MsSqlDriver implements Nette\Database\Driver
 				 t.name, ind.name, ind.index_id, ic.index_column_id";
 
 		foreach ($this->connection->query($query) as $row) {
-			$id = $row['name_index'];
-			$indexes[$id]['name'] = $id;
-			$indexes[$id]['unique'] = $row['is_unique'] !== 'False';
-			$indexes[$id]['primary'] = $row['is_primary_key'] !== 'False';
-			$indexes[$id]['columns'][$row['id_column'] - 1] = $row['name_column'];
+			$indexes[$row['name_index']]['name'] = $row['name_index'];
+			$indexes[$row['name_index']]['unique'] = $row['is_unique'] !== 'False';
+			$indexes[$row['name_index']]['primary'] = $row['is_primary_key'] !== 'False';
+			$indexes[$row['name_index']]['columns'][$row['id_column'] - 1] = $row['name_column'];
 		}
-
 		return array_values($indexes);
 	}
 

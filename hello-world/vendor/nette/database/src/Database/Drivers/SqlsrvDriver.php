@@ -15,7 +15,7 @@ use Nette;
 /**
  * Supplemental SQL Server 2005 and later database driver.
  */
-class SqlsrvDriver implements Nette\Database\Driver
+class SqlsrvDriver implements Nette\Database\ISupplementalDriver
 {
 	use Nette\SmartObject;
 
@@ -85,6 +85,7 @@ class SqlsrvDriver implements Nette\Database\Driver
 					throw new Nette\InvalidArgumentException('SQL query must begin with SELECT, UPDATE or DELETE command.');
 				}
 			}
+
 		} elseif ($limit !== null || $offset) {
 			// requires ORDER BY, see https://technet.microsoft.com/en-us/library/gg699618(v=sql.110).aspx
 			$sql .= ' OFFSET ' . (int) $offset . ' ROWS '
@@ -183,11 +184,10 @@ class SqlsrvDriver implements Nette\Database\Driver
 				i.index_id,
 				ic.index_column_id
 		") as $row) {
-			$id = $row['name'];
-			$indexes[$id]['name'] = $id;
-			$indexes[$id]['unique'] = (bool) $row['unique'];
-			$indexes[$id]['primary'] = (bool) $row['primary'];
-			$indexes[$id]['columns'][] = $row['column'];
+			$indexes[$row->name]['name'] = $row->name;
+			$indexes[$row->name]['unique'] = (bool) $row->unique;
+			$indexes[$row->name]['primary'] = (bool) $row->primary;
+			$indexes[$row->name]['columns'][] = $row->column;
 		}
 
 		return array_values($indexes);
@@ -236,7 +236,6 @@ class SqlsrvDriver implements Nette\Database\Driver
 				$types[$meta['name']] = Nette\Database\Helpers::detectType($meta['native_type']);
 			}
 		}
-
 		return $types;
 	}
 

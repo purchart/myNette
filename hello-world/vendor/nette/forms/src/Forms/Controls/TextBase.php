@@ -102,6 +102,17 @@ abstract class TextBase extends BaseControl
 	}
 
 
+	/**
+	 * Appends input string filter callback.
+	 * @return static
+	 */
+	public function addFilter(callable $filter)
+	{
+		$this->getRules()->addFilter($filter);
+		return $this;
+	}
+
+
 	public function getControl(): Nette\Utils\Html
 	{
 		$el = parent::getControl();
@@ -126,12 +137,6 @@ abstract class TextBase extends BaseControl
 	/** @return static */
 	public function addRule($validator, $errorMessage = null, $arg = null)
 	{
-		foreach ($this->getRules() as $rule) {
-			if (!$rule->canExport() && !$rule->branch) {
-				return parent::addRule($validator, $errorMessage, $arg);
-			}
-		}
-
 		if ($validator === Form::LENGTH || $validator === Form::MAX_LENGTH) {
 			$tmp = is_array($arg) ? $arg[1] : $arg;
 			if (is_scalar($tmp)) {

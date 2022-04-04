@@ -13,9 +13,11 @@ final class SignInFormFactory
 {
 	use Nette\SmartObject;
 
-	private FormFactory $factory;
+	/** @var FormFactory */
+	private $factory;
 
-	private User $user;
+	/** @var User */
+	private $user;
 
 
 	public function __construct(FormFactory $factory, User $user)

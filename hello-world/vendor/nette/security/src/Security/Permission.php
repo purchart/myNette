@@ -19,7 +19,7 @@ use Nette;
  *
  * @copyright  Copyright (c) 2005, 2007 Zend Technologies USA Inc.
  */
-class Permission implements Authorizator
+class Permission implements IAuthorizator
 {
 	use Nette\SmartObject;
 
@@ -565,8 +565,8 @@ class Permission implements Authorizator
 	 * and its respective parents are checked similarly before the lower-priority parents of
 	 * the Role are checked.
 	 *
-	 * @param  string|Role|null  $role
-	 * @param  string|Nette\Security\Resource|null  $resource
+	 * @param  string|IRole|null  $role
+	 * @param  string|IResource|null  $resource
 	 * @param  string|null  $privilege
 	 * @throws Nette\InvalidStateException
 	 */
@@ -574,7 +574,7 @@ class Permission implements Authorizator
 	{
 		$this->queriedRole = $role;
 		if ($role !== self::ALL) {
-			if ($role instanceof Role) {
+			if ($role instanceof IRole) {
 				$role = $role->getRoleId();
 			}
 			$this->checkRole($role);
@@ -582,7 +582,7 @@ class Permission implements Authorizator
 
 		$this->queriedResource = $resource;
 		if ($resource !== self::ALL) {
-			if ($resource instanceof Resource) {
+			if ($resource instanceof IResource) {
 				$resource = $resource->getResourceId();
 			}
 			$this->checkResource($resource);

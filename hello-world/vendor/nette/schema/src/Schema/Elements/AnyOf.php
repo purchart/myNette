@@ -29,17 +29,7 @@ final class AnyOf implements Schema
 	 */
 	public function __construct(...$set)
 	{
-		if (!$set) {
-			throw new Nette\InvalidStateException('The enumeration must not be empty.');
-		}
 		$this->set = $set;
-	}
-
-
-	public function firstIsDefault(): self
-	{
-		$this->default = $this->set[0];
-		return $this;
 	}
 
 
@@ -76,44 +66,37 @@ final class AnyOf implements Schema
 	}
 
 
-	public function complete($value, Context $context)
+	public function complete($value, Nette\Schema\Context $context)
 	{
-		$expecteds = $innerErrors = [];
+		$hints = $innerErrors = [];
 		foreach ($this->set as $item) {
 			if ($item instanceof Schema) {
 				$dolly = new Context;
 				$dolly->path = $context->path;
-				$res = $item->complete($item->normalize($value, $dolly), $dolly);
+				$res = $item->complete($value, $dolly);
 				if (!$dolly->errors) {
-					$context->warnings = array_merge($context->warnings, $dolly->warnings);
 					return $this->doFinalize($res, $context);
 				}
 				foreach ($dolly->errors as $error) {
-					if ($error->path !== $context->path || empty($error->variables['expected'])) {
+					if ($error->path !== $context->path || !$error->hint) {
 						$innerErrors[] = $error;
 					} else {
-						$expecteds[] = $error->variables['expected'];
+						$hints[] = $error->hint;
 					}
 				}
 			} else {
 				if ($item === $value) {
 					return $this->doFinalize($value, $context);
 				}
-				$expecteds[] = Nette\Schema\Helpers::formatValue($item);
+				$hints[] = static::formatValue($item);
 			}
 		}
 
 		if ($innerErrors) {
 			$context->errors = array_merge($context->errors, $innerErrors);
 		} else {
-			$context->addError(
-				'The %label% %path% expects to be %expected%, %value% given.',
-				Nette\Schema\Message::TYPE_MISMATCH,
-				[
-					'value' => $value,
-					'expected' => implode('|', array_unique($expecteds)),
-				]
-			);
+			$hints = implode('|', array_unique($hints));
+			$context->addError("The option %path% expects to be $hints, " . static::formatValue($value) . ' given.');
 		}
 	}
 
@@ -121,10 +104,7 @@ final class AnyOf implements Schema
 	public function completeDefault(Context $context)
 	{
 		if ($this->required) {
-			$context->addError(
-				'The mandatory item %path% is missing.',
-				Nette\Schema\Message::MISSING_ITEM
-			);
+			$context->addError('The mandatory option %path% is missing.');
 			return null;
 		}
 		if ($this->default instanceof Schema) {

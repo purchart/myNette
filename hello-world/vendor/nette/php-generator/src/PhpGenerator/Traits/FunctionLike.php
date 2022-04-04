@@ -12,7 +12,6 @@ namespace Nette\PhpGenerator\Traits;
 use Nette;
 use Nette\PhpGenerator\Dumper;
 use Nette\PhpGenerator\Parameter;
-use Nette\Utils\Type;
 
 
 /**
@@ -20,18 +19,27 @@ use Nette\Utils\Type;
  */
 trait FunctionLike
 {
-	private string $body = '';
+	/** @var string */
+	private $body = '';
 
 	/** @var Parameter[] */
-	private array $parameters = [];
-	private bool $variadic = false;
-	private ?string $returnType = null;
-	private bool $returnReference = false;
-	private bool $returnNullable = false;
+	private $parameters = [];
+
+	/** @var bool */
+	private $variadic = false;
+
+	/** @var string|null */
+	private $returnType;
+
+	/** @var bool */
+	private $returnReference = false;
+
+	/** @var bool */
+	private $returnNullable = false;
 
 
-	/** @param  ?mixed[]  $args */
-	public function setBody(string $code, ?array $args = null): static
+	/** @return static */
+	public function setBody(string $code, array $args = null): self
 	{
 		$this->body = $args === null
 			? $code
@@ -46,8 +54,8 @@ trait FunctionLike
 	}
 
 
-	/** @param  ?mixed[]  $args */
-	public function addBody(string $code, ?array $args = null): static
+	/** @return static */
+	public function addBody(string $code, array $args = null): self
 	{
 		$this->body .= ($args === null ? $code : (new Dumper)->format($code, ...$args)) . "\n";
 		return $this;
@@ -56,15 +64,17 @@ trait FunctionLike
 
 	/**
 	 * @param  Parameter[]  $val
+	 * @return static
 	 */
-	public function setParameters(array $val): static
+	public function setParameters(array $val): self
 	{
-		(function (Parameter ...$val) {})(...$val);
 		$this->parameters = [];
 		foreach ($val as $v) {
+			if (!$v instanceof Parameter) {
+				throw new Nette\InvalidArgumentException('Argument must be Nette\PhpGenerator\Parameter[].');
+			}
 			$this->parameters[$v->getName()] = $v;
 		}
-
 		return $this;
 	}
 
@@ -79,28 +89,29 @@ trait FunctionLike
 	/**
 	 * @param  string  $name without $
 	 */
-	public function addParameter(string $name, mixed $defaultValue = null): Parameter
+	public function addParameter(string $name, $defaultValue = null): Parameter
 	{
 		$param = new Parameter($name);
 		if (func_num_args() > 1) {
 			$param->setDefaultValue($defaultValue);
 		}
-
 		return $this->parameters[$name] = $param;
 	}
 
 
 	/**
 	 * @param  string  $name without $
+	 * @return static
 	 */
-	public function removeParameter(string $name): static
+	public function removeParameter(string $name): self
 	{
 		unset($this->parameters[$name]);
 		return $this;
 	}
 
 
-	public function setVariadic(bool $state = true): static
+	/** @return static */
+	public function setVariadic(bool $state = true): self
 	{
 		$this->variadic = $state;
 		return $this;
@@ -113,22 +124,22 @@ trait FunctionLike
 	}
 
 
-	public function setReturnType(?string $type): static
+	/** @return static */
+	public function setReturnType(?string $val): self
 	{
-		$this->returnType = Nette\PhpGenerator\Helpers::validateType($type, $this->returnNullable);
+		$this->returnType = $val;
 		return $this;
 	}
 
 
-	public function getReturnType(bool $asObject = false): Type|string|null
+	public function getReturnType(): ?string
 	{
-		return $asObject && $this->returnType
-			? Type::fromString($this->returnType)
-			: $this->returnType;
+		return $this->returnType;
 	}
 
 
-	public function setReturnReference(bool $state = true): static
+	/** @return static */
+	public function setReturnReference(bool $state = true): self
 	{
 		$this->returnReference = $state;
 		return $this;
@@ -141,7 +152,8 @@ trait FunctionLike
 	}
 
 
-	public function setReturnNullable(bool $state = true): static
+	/** @return static */
+	public function setReturnNullable(bool $state = true): self
 	{
 		$this->returnNullable = $state;
 		return $this;
@@ -157,7 +169,14 @@ trait FunctionLike
 	/** @deprecated  use isReturnNullable() */
 	public function getReturnNullable(): bool
 	{
-		trigger_error(__METHOD__ . '() is deprecated, use isReturnNullable().', E_USER_DEPRECATED);
 		return $this->returnNullable;
+	}
+
+
+	/** @deprecated */
+	public function setNamespace(Nette\PhpGenerator\PhpNamespace $val = null): self
+	{
+		trigger_error(__METHOD__ . '() is deprecated', E_USER_DEPRECATED);
+		return $this;
 	}
 }

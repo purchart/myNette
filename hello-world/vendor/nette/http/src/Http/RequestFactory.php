@@ -25,7 +25,7 @@ class RequestFactory
 
 	/** @var array */
 	public $urlFilters = [
-		'path' => ['#//#' => '/'], // '%20' => ''
+		'path' => ['#/{2,}#' => '/'], // '%20' => ''
 		'url' => [], // '#[.,)]$#D' => ''
 	];
 
@@ -91,7 +91,7 @@ class RequestFactory
 			(isset($_SERVER[$tmp = 'HTTP_HOST']) || isset($_SERVER[$tmp = 'SERVER_NAME']))
 			&& preg_match('#^([a-z0-9_.-]+|\[[a-f0-9:]+\])(:\d+)?$#Di', $_SERVER[$tmp], $pair)
 		) {
-			$url->setHost(rtrim(strtolower($pair[1]), '.'));
+			$url->setHost(strtolower($pair[1]));
 			if (isset($pair[2])) {
 				$url->setPort((int) substr($pair[2], 1));
 			} elseif (isset($_SERVER['SERVER_PORT'])) {
@@ -163,11 +163,8 @@ class RequestFactory
 						$list[$key][$k] = $v;
 						$list[] = &$list[$key][$k];
 
-					} elseif (is_string($v)) {
-						$list[$key][$k] = (string) preg_replace('#[^' . self::CHARS . ']+#u', '', $v);
-
 					} else {
-						throw new Nette\InvalidStateException(sprintf('Invalid value in $_POST/$_COOKIE in key %s, expected string, %s given.', "'$k'", gettype($v)));
+						$list[$key][$k] = (string) preg_replace('#[^' . self::CHARS . ']+#u', '', $v);
 					}
 				}
 			}

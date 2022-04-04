@@ -16,11 +16,14 @@ use Nette\Application;
 /**
  * The bidirectional route for trivial routing via query parameters.
  */
-final class SimpleRouter extends Nette\Routing\SimpleRouter implements Nette\Routing\Router
+final class SimpleRouter extends Nette\Routing\SimpleRouter implements Nette\Application\IRouter
 {
 	private const
 		PRESENTER_KEY = 'presenter',
 		MODULE_KEY = 'module';
+
+	/** @var string */
+	private $module = '';
 
 	/** @var int */
 	private $flags;
@@ -33,7 +36,6 @@ final class SimpleRouter extends Nette\Routing\SimpleRouter implements Nette\Rou
 			if (!$presenter) {
 				throw new Nette\InvalidArgumentException("Argument must be array or string in format Presenter:action, '$defaults' given.");
 			}
-
 			$defaults = [
 				self::PRESENTER_KEY => $presenter,
 				'action' => $action === '' ? Application\UI\Presenter::DEFAULT_ACTION : $action,
@@ -41,13 +43,28 @@ final class SimpleRouter extends Nette\Routing\SimpleRouter implements Nette\Rou
 		}
 
 		if (isset($defaults[self::MODULE_KEY])) {
-			throw new Nette\DeprecatedException(__METHOD__ . '() parameter module is deprecated, use RouteList::withModule() instead.');
-		} elseif ($flags) {
-			trigger_error(__METHOD__ . '() parameter $flags is deprecated, use RouteList::add(..., $flags) instead.', E_USER_DEPRECATED);
+			trigger_error(__METHOD__ . '() parameter module is deprecated, use RouteList::withModule() instead.', E_USER_DEPRECATED);
+			$this->module = $defaults[self::MODULE_KEY] . ':';
+			unset($defaults[self::MODULE_KEY]);
 		}
 
 		$this->flags = $flags;
 		parent::__construct($defaults);
+	}
+
+
+	/**
+	 * Maps HTTP request to an array.
+	 */
+	public function match(Nette\Http\IRequest $httpRequest): ?array
+	{
+		$params = parent::match($httpRequest);
+		$presenter = $params[self::PRESENTER_KEY] ?? null;
+		if (is_string($presenter)) {
+			$params[self::PRESENTER_KEY] = $this->module . $presenter;
+		}
+
+		return $params;
 	}
 
 
@@ -60,17 +77,19 @@ final class SimpleRouter extends Nette\Routing\SimpleRouter implements Nette\Rou
 			return null;
 		}
 
+		if (strncmp($params[self::PRESENTER_KEY], $this->module, strlen($this->module)) !== 0) {
+			return null;
+		}
+		$params[self::PRESENTER_KEY] = substr($params[self::PRESENTER_KEY], strlen($this->module));
 		return parent::constructUrl($params, $refUrl);
 	}
 
 
-	/** @deprecated */
+	/**
+	 * Returns flags.
+	 */
 	public function getFlags(): int
 	{
-		trigger_error(__METHOD__ . '() is deprecated.', E_USER_DEPRECATED);
 		return $this->flags;
 	}
 }
-
-
-interface_exists(Nette\Application\IRouter::class);

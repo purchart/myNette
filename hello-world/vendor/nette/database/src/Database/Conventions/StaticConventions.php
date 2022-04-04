@@ -10,13 +10,13 @@ declare(strict_types=1);
 namespace Nette\Database\Conventions;
 
 use Nette;
-use Nette\Database\Conventions;
+use Nette\Database\IConventions;
 
 
 /**
  * Conventions based on static definition.
  */
-class StaticConventions implements Conventions
+class StaticConventions implements IConventions
 {
 	use Nette\SmartObject;
 

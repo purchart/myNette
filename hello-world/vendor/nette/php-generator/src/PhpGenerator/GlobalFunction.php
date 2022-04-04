@@ -15,7 +15,7 @@ use Nette;
 /**
  * Global function.
  *
- * @property-deprecated string $body
+ * @property string $body
  */
 final class GlobalFunction
 {
@@ -25,22 +25,28 @@ final class GlobalFunction
 	use Traits\CommentAware;
 	use Traits\AttributeAware;
 
-	public static function from(string $function, bool $withBody = false): self
+	public static function from(string $function): self
 	{
-		return (new Factory)->fromFunctionReflection(new \ReflectionFunction($function), $withBody);
+		return (new Factory)->fromFunctionReflection(new \ReflectionFunction($function));
 	}
 
 
-	/** @deprecated  use GlobalFunction::from(..., withBody: true) */
 	public static function withBodyFrom(string $function): self
 	{
-		trigger_error(__METHOD__ . '() is deprecated, use GlobalFunction::from(..., withBody: true)', E_USER_DEPRECATED);
-		return (new Factory)->fromFunctionReflection(new \ReflectionFunction($function), withBody: true);
+		return (new Factory)->fromFunctionReflection(new \ReflectionFunction($function), true);
 	}
 
 
 	public function __toString(): string
 	{
-		return (new Printer)->printFunction($this);
+		try {
+			return (new Printer)->printFunction($this);
+		} catch (\Throwable $e) {
+			if (PHP_VERSION_ID >= 70400) {
+				throw $e;
+			}
+			trigger_error('Exception in ' . __METHOD__ . "(): {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}", E_USER_ERROR);
+			return '';
+		}
 	}
 }

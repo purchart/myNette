@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace App\Presenters;
 
 use App\Forms;
-use Nette;
 use Nette\Application\UI\Form;
 
 
-final class SignPresenter extends Nette\Application\UI\Presenter
+final class SignPresenter extends BasePresenter
 {
 	/** @persistent */
-	public string $backlink = '';
+	public $backlink = '';
 
-	private Forms\SignInFormFactory $signInFactory;
+	/** @var Forms\SignInFormFactory */
+	private $signInFactory;
 
-	private Forms\SignUpFormFactory $signUpFactory;
+	/** @var Forms\SignUpFormFactory */
+	private $signUpFactory;
 
 
 	public function __construct(Forms\SignInFormFactory $signInFactory, Forms\SignUpFormFactory $signUpFactory)

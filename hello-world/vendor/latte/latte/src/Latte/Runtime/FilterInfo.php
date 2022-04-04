@@ -23,18 +23,8 @@ class FilterInfo
 	public $contentType;
 
 
-	public function __construct(?string $contentType = null)
+	public function __construct(string $contentType = null)
 	{
 		$this->contentType = $contentType;
-	}
-
-
-	public function validate(array $contentTypes, ?string $name = null): void
-	{
-		if (!in_array($this->contentType, $contentTypes, true)) {
-			$name = $name ? " |$name" : $name;
-			$type = $this->contentType ? ' ' . strtoupper($this->contentType) : '';
-			throw new Latte\RuntimeException("Filter{$name} used with incompatible type{$type}.");
-		}
 	}
 }
