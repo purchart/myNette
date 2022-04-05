@@ -19,11 +19,37 @@
 </head>
 
 <body>
+	<header>
+		<h1>Jednoduchy redakcni system v Nette</h1>
+	</header>
 	<div class=container>
+		{* vypis flash zprav *}
 		<div n:foreach="$flashes as $flash" n:class="alert, 'alert-' . $flash->type">{$flash->message}</div>
 
-		{include content}
+		<nav>
+			<ul>
+				<li><a n:href=:Core:Article:>Uvod</a></li>
+				<li><a href="#">Seznam clanku</a></li>
+				<li><a href="#">Kontakt</a></li>
+			</ul>
+		</nav>
+
+		<br style="clear: both;">
+		<article>
+			<header>
+				<h1>{include title}</h1>
+			</header>
+			<section>
+				<h3>{include content}</h3> {* vlozeni obsahu do sablony *}
+			</section>
+		</article>
 	</div>
+
+	<footer>
+		<p>
+			Jednoduchy redakcni system
+		</p>
+	</footer>
 
 	{block scripts}
 	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>

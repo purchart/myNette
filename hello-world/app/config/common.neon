@@ -32,5 +32,5 @@ services:
 	- App\Model\CalculatorManager
 
 # propojeni s dalsimi konfiguracnimi soubory.
-includes:
-	- ../app/CoreModule/config/common.neon #nacteni konfigurace z CoreModule
+# includes:
+# 	- ../app/CoreModule/config/common.neon #nacteni konfigurace z CoreModule
