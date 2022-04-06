@@ -1,0 +1,7 @@
+parameters:
+
+database:
+	dsn: 'mysql:host=localhost;dbname=nette-cms'
+	user: 'root'
+	password: 'root'
+	
