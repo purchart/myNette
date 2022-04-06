@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
+namespace App\Model;
+
 use Nette;
 use Nette\Security\Passwords;
 use Nette\Database\Table\Selection;
-use Nette\SmartObject;
 use Nette\Security\IAuthenticator;
 use Nette\Security\IIdentity;
 use Nette\Security\Identity;
@@ -15,7 +16,7 @@ use Nette\Database\Context;
 
 final class UserManager implements IAuthenticator
 {
-    use SmartObject;
+    use Nette\SmartObject;
     
     private const
         TABLE_NAME = 'user',
@@ -36,7 +37,7 @@ final class UserManager implements IAuthenticator
         $this->passwords = $passwords;
     }
 
-    public function authenticate(array $credentiales): IIdentity
+    public function authenticate(array $credentials): IIdentity
     {
         [$email, $password] = $credentials;
 

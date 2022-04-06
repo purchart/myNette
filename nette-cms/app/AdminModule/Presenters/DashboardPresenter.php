@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace App\AdminModule\Presenters;
 
 use Nette;
-use Nette\Application\UI\Presenter;
 use Nette\Database\Context;
 
-final class DashboardPresenter extends Presenter
+final class DashboardPresenter extends BaseAdminPresenter
 {
     private $database;
 
@@ -19,7 +18,7 @@ final class DashboardPresenter extends Presenter
 
     public function renderDefault(): void
     {
-        $this->template->text = 'Dashboard';
+        $this->template->text = 'Správa anket';
     }
 }
 

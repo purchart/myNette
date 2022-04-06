@@ -1,2 +1,21 @@
+security:
+	roles:
+		guest:
+		member: [guest]
+		admin:
+
 services:
 	- App\Router\RouterFactory::createRouter
+	- App\Forms\SignInFormFactory
+	- App\Forms\FormFactory
+	authentificator: App\Model\UserManager
+	security.authorizator:
+		setup:
+			- addResource(Error)
+			- addResource(Admin:Dashboard)
+			- addresource(Admin:Sign)
+			- allow(admin)
+			- allow(guest, Error)
+			- allow(guest, Admin:Sign)
+			- allow(member, Admin:Dashboard, default)
+			- allow(member, Admin:Sign, out)
