@@ -25,12 +25,12 @@ class InstalledVersions
 private static $installed = array (
   'root' => 
   array (
-    'pretty_version' => 'v3.1.10',
-    'version' => '3.1.10.0',
+    'pretty_version' => 'dev-main',
+    'version' => 'dev-main',
     'aliases' => 
     array (
     ),
-    'reference' => NULL,
+    'reference' => 'e46d5a86796c7838f14517ad72d99216d86f9216',
     'name' => 'nette/web-project',
   ),
   'versions' => 
@@ -208,12 +208,21 @@ private static $installed = array (
     ),
     'nette/web-project' => 
     array (
-      'pretty_version' => 'v3.1.10',
-      'version' => '3.1.10.0',
+      'pretty_version' => 'dev-main',
+      'version' => 'dev-main',
       'aliases' => 
       array (
       ),
-      'reference' => NULL,
+      'reference' => 'e46d5a86796c7838f14517ad72d99216d86f9216',
+    ),
+    'nittro/nette-bridges' => 
+    array (
+      'pretty_version' => 'v2.1.6',
+      'version' => '2.1.6.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => '2e8d5c353969738c6399c2b01d0b377c376a2b86',
     ),
     'symfony/thanks' => 
     array (
@@ -223,6 +232,15 @@ private static $installed = array (
       array (
       ),
       'reference' => 'e9c4709560296acbd4fe9e12b8d57a925aa7eae8',
+    ),
+    'tomaj/nette-bootstrap-form' => 
+    array (
+      'pretty_version' => '2.0.1',
+      'version' => '2.0.1.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => 'c4aeee158ede5c64cf2dab588ee181135b8b2e92',
     ),
     'tracy/tracy' => 
     array (
