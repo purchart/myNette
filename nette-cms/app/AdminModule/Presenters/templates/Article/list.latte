@@ -18,7 +18,7 @@
                     <tbody>
                         <tr n:foreach="$articles as $article">
                             <td>{$article->id}</td>
-                            <td></td>
+                            <td>{$article->name}</td>
                             <td>{$article->title}</td>
                             <td>
                                 <a n:href="editor $article->url" class="btn btn-xs btn-primary pull-right" title="Upravit otázku"><i class="far fa-edit"></i></a>

@@ -45,7 +45,7 @@ final class SignUpFormFactory
         $roles = [
             'Role' => [
                 'member' => 'Správce',
-                'guest' => 'Administrátor',
+                'admin' => 'Administrátor',
             ]
         ];
         $form->addSelect('role', 'Role:', $roles)

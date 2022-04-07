@@ -81,4 +81,9 @@ class CategoryManager extends DatabaseManager
                 ->update($category);
         }
     }
+
+    public function getCategoriesCount()
+    {
+        return $this->database->table(self::TABLE_NAME)->count('*');
+    }
 }

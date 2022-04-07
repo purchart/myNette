@@ -20,6 +20,8 @@ class ArticleManager extends DatabaseManager
 
     // private $picturePath;
 
+    private $categoryManager;
+
     public function __construct(Context $database)
     {
         parent::__construct($database);
@@ -56,9 +58,13 @@ class ArticleManager extends DatabaseManager
         return $articles;
     }
 
-    public function getAllArticles(): Selection
+    public function getAllArticles()
     {
-        return $this->database->table(self::TABLE_NAME)->order(self::COLUMN_ID . ' DESC');
+        // $articles = $this->database->query('SELECT article.id, article.title, article.url, article.has_picture, article.date_add, article.short_description, article.description , article_category.category_id FROM article JOIN article_category ON article.id = article_category.article_id');
+        // return $articles->fetch();
+        // $articles =  $this->database->table('article')->order(self::COLUMN_ID . ' DESC');
+        $articles = $this->database->query('SELECT article.id, article.title, article.url, article.has_picture, article.date_add, article.short_description, article.description , article_category.category_id, category.name FROM article JOIN article_category ON article.id = article_category.article_id LEFT JOIN category ON category.id = article_category.category_id');
+        return $articles;
     }
 
     public function saveArticle(array $values): IRow
@@ -78,7 +84,7 @@ class ArticleManager extends DatabaseManager
                 'article_id' => $values['id'],
                 'category_id' => $values['categories'],
             ];
-            $article = $this->database->table('article')
+            $article = $this->database->table(self::TABLE_NAME)
                 ->wherePrimary($values['id']);
 
             $article->update($articleData);
