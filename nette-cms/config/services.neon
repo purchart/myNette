@@ -8,6 +8,8 @@ services:
 	- App\Router\RouterFactory::createRouter
 	- App\Forms\SignInFormFactory
 	- App\Forms\FormFactory
+	- App\Model\ArticleManager(picturePath: "%wwwDir%/images/articles") 
+	- App\Model\CategoryManager
 	authentificator: App\Model\UserManager
 	security.authorizator:
 		setup:
