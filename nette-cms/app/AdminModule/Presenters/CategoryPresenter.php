@@ -53,10 +53,10 @@ class CategoryPresenter extends BaseAdminPresenter
         $form->onSuccess[] = function (Form $form, Array $values) {
             try {
                 $this->categoryManager->saveCategory($values);
-                $this->flashMessage('Kategorie byla úspěšně uložena.');
+                $this->flashMessage('Anketa byla úspěšně uložena.');
                 $this->redirect('Category:list');
             } catch (UniqueConstraintViolationException $e) {
-                $this->flashMessage('Kategorie s touto URL adresou již existuje.');
+                $this->flashMessage('Anketa s touto URL adresou již existuje.');
             }
         };
         return $form;

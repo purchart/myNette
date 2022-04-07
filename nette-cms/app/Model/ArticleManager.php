@@ -8,7 +8,7 @@ use Nette\Database\Table\ActiveRow;
 use Nette\Database\Table\IRow;
 use Nette\Database\Table\Selection;
 use Nette\Database\Context;
-use Nette\Utils\Image;
+// use Nette\Utils\Image;
 
 class ArticleManager extends DatabaseManager
 {
@@ -18,12 +18,12 @@ class ArticleManager extends DatabaseManager
         COLUMN_ON_HOMEPAGE = 'on_homepage',
         COLUMN_URL = 'url';
 
-    private $picturePath;
+    // private $picturePath;
 
-    public function __construct(Context $database, string $picturePath)
+    public function __construct(Context $database)
     {
         parent::__construct($database);
-        $this->picturePath = $picturePath; 
+        // $this->picturePath = $picturePath; 
     }
 
     public function getArticle(string $url, string $columns = NULL): IRow
@@ -66,12 +66,12 @@ class ArticleManager extends DatabaseManager
         $articleData = [
             'title' => $values['title'],
             'url' => $values['url'],
-            'short_description' => $values['short_description'],
-            'description' => $values['description'],
+            // 'short_description' => $values['short_description'],
+            // 'description' => $values['description'],
         ];
-        if (!empty($values['picture']) && $values['picture']->isOk()) {
-            $articleData['has_picture'] = true;
-        }
+        // if (!empty($values['picture']) && $values['picture']->isOK()) {
+        //     $articleData['has_picture'] = true;
+        // }
 
         if (!empty($values['id'])) {
             $articleCategoryData = [
@@ -98,11 +98,11 @@ class ArticleManager extends DatabaseManager
             ];
         }
 
-        if (!empty($values['picture']) && $values['picture']->isOk) {
-            $im = $values['picture']->toImage();
-            $im->resize(900, 400, Image::EXACT);
-            $im->save(sprintf('%s/%d.jpg', $this->picturePath, $article->id), 90, Image::JPEG);
-        }
+        // if (!empty($values['picture'])) {
+        //     $im = $values['picture']->toImage();
+        //     $im->resize(900, 400, Image::EXACT);
+        //     $im->save(sprintf('%s/%d.jpg', $this->picturePath, $article->id), 90, Image::JPEG);
+        // }
 
         if (!empty($values['categories'])) {
             $this->database->table('article_category')->insert($articleCategoryData);
