@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `user` (
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 
 INSERT INTO `user` (`id`, `firstname`, `lastname`, `email`, `password`, `role`) VALUES
-(1, 'Jan', 'Purchart', 'jprace@icloud.com', '$2y$10$arJIJie/xGoqZayCro4yZ.pPEkt9Ps4DJBNZAHSZ/rvbOkj//K/tq', 'admin');
+(1, 'Karel', 'Káš', 'karel@newlogic.cz', '$2y$10$d2/375NlEfkG08GqmiWbl.B/tdXa8E40kt.Op3EFiJBxfJlX0CgD2', 'admin');
 
 
 DROP TABLE IF EXISTS `article_category`;

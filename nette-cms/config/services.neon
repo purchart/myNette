@@ -10,6 +10,7 @@ services:
 	- App\Forms\FormFactory
 	- App\Model\ArticleManager
 	- App\Model\CategoryManager
+	- App\Forms\SignUpFormFactory
 	authentificator: App\Model\UserManager
 	security.authorizator:
 		setup:
@@ -18,6 +19,7 @@ services:
 			- addResource(Admin:Sign)
 			- addResource(Admin:Category)
 			- addResource(Admin:Article)
+			- addResource(Admin:User)
 			- allow(admin)
 			- allow(guest, Error)
 			- allow(guest, Admin:Sign)
