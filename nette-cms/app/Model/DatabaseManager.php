@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Model;
 
 use Nette\Database\Context;
+use Nette\SmartObject;
 
 abstract class DatabaseManager
 {
-    use Nette\SmartObject;
+    use SmartObject;
 
     protected $database;
 

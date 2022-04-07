@@ -7,7 +7,7 @@ namespace App\Model;
 use Nette\Database\Table\ActiveRow;
 use Nette\Database\Table\Selection;
 
-class CategoryModel extends DatabaseManager
+class CategoryManager extends DatabaseManager
 {
     const
         TABLE_NAME = 'category',
@@ -76,7 +76,7 @@ class CategoryModel extends DatabaseManager
             unset($category[self::COLUMN_ID]);
             $this->database->table(self::TABLE_NAME)->insert($category);
         } else {
-            $this->databse->table(self::TABLE_NAME)
+            $this->database->table(self::TABLE_NAME)
                 ->where(self::COLUMN_ID, $category[self::COLUMN_ID])
                 ->update($category);
         }

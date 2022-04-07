@@ -15,7 +15,8 @@ services:
 		setup:
 			- addResource(Error)
 			- addResource(Admin:Dashboard)
-			- addresource(Admin:Sign)
+			- addResource(Admin:Sign)
+			- addResource(Admin:Category)
 			- allow(admin)
 			- allow(guest, Error)
 			- allow(guest, Admin:Sign)

@@ -7,7 +7,7 @@ namespace App\Model;
 use Nette\Database\Table\ActiveRow;
 use Nette\Database\Table\IRow;
 use Nette\Database\Table\Selection;
-use Nette\Databse\Context;
+use Nette\Database\Context;
 use Nette\Utils\Image;
 
 class ArticleManager extends DatabaseManager
