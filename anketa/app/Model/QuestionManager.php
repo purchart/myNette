@@ -24,12 +24,12 @@ class QuestionManager extends DatabaseManager
             ->fetchPairs(null, self::COLUMN_ID);
     }
 
-    public function updateAnswerQuestions(int $id, array $categories)
+    public function updateAnswerQuestions(int $id, array $questions)
     {
         $this->database->table(AnswerManager::TABLE_NAME . '_' . self::TABLE_NAME)
             ->where(AnswerManager::COLUMN_ID, $id)->delete();
         $rows = array();
-        foreach ($categories as $question) {
+        foreach ($questions as $question) {
             $rows[] = array(
                 AnswerManager::COLUMN_ID => $id,
                 self::COLUMN_ID => $question
