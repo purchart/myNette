@@ -8,8 +8,9 @@ services:
 	- App\Router\RouterFactory::createRouter
 	- App\Forms\SignInFormFactory
 	- App\Forms\FormFactory
-	- App\Model\ArticleManager
-	- App\Model\CategoryManager
+	- App\Model\AnswerManager
+	- App\Model\QuestionManager
+	- App\Model\ResultManager
 	- App\Forms\SignUpFormFactory
 	authentificator: App\Model\UserManager
 	security.authorizator:
@@ -17,8 +18,8 @@ services:
 			- addResource(Error)
 			- addResource(Admin:Dashboard)
 			- addResource(Admin:Sign)
-			- addResource(Admin:Category)
-			- addResource(Admin:Article)
+			- addResource(Admin:Question)
+			- addResource(Admin:Answer)
 			- addResource(Admin:User)
 			- allow(admin)
 			- allow(guest, Error)

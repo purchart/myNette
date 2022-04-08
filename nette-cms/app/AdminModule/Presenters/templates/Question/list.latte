@@ -11,20 +11,18 @@
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">Název ankety</th>
+                            <th scope="col">Stav ankety</th>
                             <th scope="col">Akce</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr n:foreach="$categories as $category">
+                        <tr n:foreach="$questions as $question">
+                            <td>{$question->id}</td>
+                            <td>{$question->name}</td>
+                            <td>{$question->state}</td>
                             <td>
-                                {$category->id}
-                            </td>
-                            <td>
-                                {$category->name}
-                            </td>
-                            <td>
-                                <a n:href="editor $category->url" class="btn btn-xs btn-primary pull-right" title="Upravit anketu"><i class="far fa-edit"></i></a>
-                                <a n:href="remove $category->url" class="btn btn-xs btn-danger pull-right" title="Odstranit anketu"><i class="fas fa-trash-alt"></i></a>
+                                <a n:href="editor $question->url" class="btn btn-xs btn-primary pull-right" title="Upravit anketu"><i class="far fa-edit"></i></a>
+                                <a n:href="remove $question->url" class="btn btn-xs btn-danger pull-right" title="Odstranit anketu"><i class="fas fa-trash-alt"></i></a>
                             </td>
                         </tr>
                     </tbody>

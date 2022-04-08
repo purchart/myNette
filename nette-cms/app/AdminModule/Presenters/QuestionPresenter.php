@@ -4,41 +4,41 @@ declare(strict_types=1);
 
 namespace App\AdminModule\Presenters;
 
-use App\Model\CategoryManager;
+use App\Model\QuestionManager;
 use Nette\Application\AbortException;
 use Nette\Application\UI\Form;
 use Nette\Database\UniqueConstraintViolationException;
 use Tomaj\Form\Renderer\BootstrapVerticalRenderer;
 
-class CategoryPresenter extends BaseAdminPresenter
+class QuestionPresenter extends BaseAdminPresenter
 {
-    private $categoryManager;
+    private $questionManager;
 
-    public function __construct(CategoryManager $categoryManager)
+    public function __construct(QuestionManager $questionManager)
     {
         parent::__construct();
-        $this->categoryManager = $categoryManager;
+        $this->questionManager = $questionManager;
     }
 
     public function renderList()
     {
-        $this->template->categories = $this->categoryManager->getCategories();
+        $this->template->questions = $this->questionManager->getQuestions();
     }
 
     public function actionRemove(string $url = null)
     {
-        $this->categoryManager->removeCategory($url);
+        $this->questionManager->removeQuestion($url);
         $this->flashMessage('Anketa byla úspěšně odstraněna.');
-        $this->redirect('Category:list');
+        $this->redirect('Question:list');
     }
 
     public function actionEditor(string $url = null)
     {
         if ($url) {
-            if (!($category = $this->categoryManager->getCategory($url))) {
+            if (!($question = $this->questionManager->getQuestion($url))) {
                 $this->flashMessage('Anketa nebyla nalezena.');
             } else {
-                $this['editorForm']->setDefaults($category);
+                $this['editorForm']->setDefaults($question);
             }
         }
     }
@@ -49,14 +49,20 @@ class CategoryPresenter extends BaseAdminPresenter
         $form->addHidden('id');
         $form->addText('name', 'Název')->setRequired();
         $form->addText('url', 'URL')->setRequired();
+        $state = ['1' => 'Aktivní anketa', '0' => 'Neaktivní anketa' ];
+        $form->addSelect('state', 'Stav', $state);
         $form->addSubmit('save', 'Uložit kategorii');
         $form->onSuccess[] = function (Form $form, Array $values) {
             try {
-                $this->categoryManager->saveCategory($values);
-                $this->flashMessage('Anketa byla úspěšně uložena.');
-                $this->redirect('Category:list');
+                $activeQuestionCount = $this->questionManager->getActiveQuestionCount();
+                if ($activeQuestionCount > 0 && $values['state'] == 1) $this->flashMessage('Jen jedna anketa muze byt aktivni.');
+                else {
+                    $this->questionManager->saveQuestion($values);
+                    $this->flashMessage('Anketa byla úspěšně uložena.');
+                    $this->redirect('Question:list');
+                }
             } catch (UniqueConstraintViolationException $e) {
-                $this->flashMessage('Anketa s touto URL adresou již existuje.');
+                $this->flashMessage('Anketa s timto nazvem jiz existuje.');
             }
         };
         return $form;

@@ -16,13 +16,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr n:foreach="$articles as $article">
-                            <td>{$article->id}</td>
-                            <td>{$article->name}</td>
-                            <td>{$article->title}</td>
+                        <tr n:foreach="$answers as $answer">
+                            <td>{$answer->id}</td>
+                            <td>{$answer->name}</td>
+                            <td>{$answer->title}</td>
                             <td>
-                                <a n:href="editor $article->url" class="btn btn-xs btn-primary pull-right" title="Upravit otázku"><i class="far fa-edit"></i></a>
-                                <a n:href="remove $article->url" class="btn btn-xs btn-danger pull-right" title="Odstranit otázku"><i class="fas fa-trash-alt"></i></a>
+                                <a n:href="editor $answer->url" class="btn btn-xs btn-primary pull-right" title="Upravit otázku"><i class="far fa-edit"></i></a>
+                                <a n:href="remove $answer->url" class="btn btn-xs btn-danger pull-right" title="Odstranit otázku"><i class="fas fa-trash-alt"></i></a>
                             </td>
                         </tr>
                     </tbody>

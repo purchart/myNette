@@ -5,23 +5,23 @@ declare(strict_types=1);
 namespace App\AdminModule\Presenters;
 
 use Nette;
-use App\Model\CategoryManager;
+use App\Model\QuestionManager;
 
 final class DashboardPresenter extends BaseAdminPresenter
 {
     private $database;
 
-    private $categoryManager;
+    private $questionManager;
 
-    public function __construct(CategoryManager $categoryManager)
+    public function __construct(QuestionManager $questionManager)
     {
         parent::__construct();
-        $this->categoryManager = $categoryManager;
+        $this->questionManager = $questionManager;
     }
 
     public function renderDefault(): void
     {
-        $this->template->categoryTotal = $this->categoryManager->getCategoriesCount();
+        $this->template->questionTotal = $this->questionManager->getQuestionsCount();
     }
 }
 

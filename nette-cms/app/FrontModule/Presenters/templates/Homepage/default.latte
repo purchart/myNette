@@ -1,9 +1,18 @@
 {block content}
-    <div n:foreach="$articles as $article" class="post">
-		<div class="date">{$article->date_add|date:'F j, Y'}</div>
-		
-		<h2>{$article->title}</h2>
 
-		<div>{$article->description}</div>
-	</div>
+<div class="row">
+    <div class="col-xl-12 col-lg-8">
+        <div class="card shadow mb-4">
+            {* <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Otazka</h6>
+            </div> *}
+            <div n:foreach="$activeQuestions as $activeQuestion" class="card-header">
+                <h2>{$activeQuestion->name}</h2>
+            </div>
+            <div class="card-body">
+                {control editorForm}
+            </div>
+        </div>
+    </div>
+</div>
 {/block}
