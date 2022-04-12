@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uzivatele</title>
+    <script>
+        function showUser(str) {
+            var show = true;
+            if (show){
+                if (str == "") {
+                    document.getElementById("txtHint").innerHTML = "";
+                    return;
+                } else { 
+                    var xmlhttp = new XMLHttpRequest();
+                    xmlhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        document.getElementById("txtHint").innerHTML = this.responseText;
+                    }
+                    };
+                    xmlhttp.open("GET", "https://pokeapi.co/api/v2/pokemon/?q="+str,true);
+                    xmlhttp.send();
+                }
+            }
+        }
+        showUser(1)
+    </script>
+    </head>
+<body>
+    <form>
+        <button name="users" type="submit" onclick="showUser(1)">Nacti data
+        </button>
+    </form>
+    <div id="txtHint">--- Zde se zobrazi uzivatele ---</div>
+    
+</body>
+</html>
