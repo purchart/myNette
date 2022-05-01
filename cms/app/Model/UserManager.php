@@ -55,9 +55,9 @@ final class UserManager implements IAuthenticator
 
         if (!$row) {
             throw new AuthenticationException('Zadali jste nespravny email', self::IDENTITY_NOT_FOUND);
-        } elseif (!$this->password->verify($password, $row[self::COLUMN_PASSWORD_HASH])){
+        } elseif (!$this->passwords->verify($password, $row[self::COLUMN_PASSWORD_HASH])){
             throw new AuthenticatioException('Zadali jsem chybne heslo', self::INVALID_CREDENTIAL);
-        } elseif ($this->password->needsRehash($row[self::COLUMN_PASSWORD_HASH])){
+        } elseif ($this->passwords->needsRehash($row[self::COLUMN_PASSWORD_HASH])){
             $row->update([
                 self::COLUMN_PASSWORD_HASH => $this->passwords->hash($password),
             ]);
