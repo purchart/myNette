@@ -53,7 +53,7 @@ class CategoryManager extends DatabaseManager
         return $this->database->table(self::TABLE_NAME)->order(self::COLUMN_ID . ' ASC');
     }
 
-    public function getAllCcategory()
+    public function getAllCategory()
     {
         return $this->database->table(self::TABLE_NAME)->fetchPairs(self::COLUMN_ID, self::COLUMN_TITLE);
     }

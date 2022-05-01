@@ -4,7 +4,7 @@ security:
 		member: [guest]
 		admin:
 services:
-	- App\Model\ArticleManager(picturePath: "%wwwDir%/imagess/articles")
+	- App\Model\ArticleManager(picturePath: "%wwwDir%/images/articles")
 	- App\Model\CategoryManager
 	- App\Forms\FormFactory
 	- App\Forms\SignInFormFactory
@@ -16,6 +16,7 @@ services:
 			- addResource(Admin:Dashboard)
 			- addResource(Admin:Sign)
 			- addResource(Admin:Category)
+			- addResource(Admin:Article)
 			- allow(admin)
 			- allow(guest, Error)
 			- allow(guest, Admin:Sign)

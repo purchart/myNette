@@ -105,7 +105,8 @@ class ArticleManager extends DatabaseManager
         if (!empty($values['picture']) && $values['picture']->isOk()){
             /** @var Image $im */
             $im = $values['picture']->toImage();
-            $im->resize(900, 400, Image:EXACT);
+            $im->resize(900, 400, Image::EXACT);
+            bdump($this->picturePath);
             $im->save(sprintf('%s/%d.jpg', $this->picturePath, $article_id), 90, Image::JPEG);
         }
         if (!empty($values['categories'])){

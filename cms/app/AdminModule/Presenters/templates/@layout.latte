@@ -46,6 +46,21 @@
                 <div class="sidebar-heading">Web</div>
                 <!-- Nav Item - Pages Collapse Menu -->
                 <li class="nav-item">
+                    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseArticle" aria-expanded="true" aria-controls="collapseArticle">
+                        <i class="fas fa-bars"></i>
+                        <span>Články</span>
+                    </a>
+                    <div id="collapseArticle" class="collapse" aria-labelledby="headingArticle" data-parent="#accordionSidebar">
+                        <div class="bg-white py-2 collapse-inner rounded">
+                            <h6 class="collapse-header">Správa článků:
+                            </h6>
+                            <a class="collapse-item" n:href=Article:editor>Přidat článek</a>
+                            <a class="collapse-item" n:href=Article:list>Seznam článek</a>
+                        </div>
+                    </div>
+                </li>
+
+                <li class="nav-item">
                     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseCategory" aria-expanded="true" aria-controls="collapseCategory">
                         <i class="fas fa-bars"></i>
                         <span>Kategorie</span>
