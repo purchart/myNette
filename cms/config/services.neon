@@ -5,6 +5,7 @@ security:
 		admin:
 services:
 	- App\Model\ArticleManager(picturePath: "%wwwDir%/images/articles")
+	- App\Model\CmsManager(picturePath: "%wwwDir%/images/cms")
 	- App\Model\CategoryManager
 	- App\Model\CommentManager
 	- App\Forms\FormFactory
@@ -19,6 +20,7 @@ services:
 			- addResource(Admin:Sign)
 			- addResource(Admin:Category)
 			- addResource(Admin:Comment)
+			- addResource(Admin:Cms)
 			- addResource(Admin:Article)
 			- addResource(Admin:User)
 			- allow(admin)
