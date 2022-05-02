@@ -8,6 +8,7 @@ services:
 	- App\Model\CategoryManager
 	- App\Forms\FormFactory
 	- App\Forms\SignInFormFactory
+	- App\Forms\SignUpFormFactory
 	router: App\Router\RouterFactory::createRouter
 	authenticator: App\Model\UserManager
 	security.authorizator:
@@ -17,6 +18,7 @@ services:
 			- addResource(Admin:Sign)
 			- addResource(Admin:Category)
 			- addResource(Admin:Article)
+			- addResource(Admin:User)
 			- allow(admin)
 			- allow(guest, Error)
 			- allow(guest, Admin:Sign)

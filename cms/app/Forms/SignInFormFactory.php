@@ -41,7 +41,7 @@ final class SignInFormFactory
                 $form->addError('Je nutne zadat spravne prihlasovaci udaje');
                 return;
             }
-                $onSuccess();
+            $onSuccess();
         };
 
         return $form;        
