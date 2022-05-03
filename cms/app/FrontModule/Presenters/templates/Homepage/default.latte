@@ -1,7 +1,15 @@
 {block content}
-	<div n:foreach="$articles as $article">
-		<div class="date">{$article->date_add|date:'F j, Y'}</div>
-		<h2>{$article->title}</h2>
-		<div>{$article->description}</div>
+<div class="card mt-4">
+	{if $article->has_picture}
+		<img class="card-img-top" src="{$basePath}/images/cms/{$article->id}.jpg?{time()}" alt="{$article->title}">
+	{/if}
+	<div class="card-body">
+		<h3 class="card-title">{$article->title}</h3>
+		<h2 class="card-text">{$article->description|noescape}</h2>
 	</div>
+</div>
+{/block}
+
+{block scripts}
+	{include parent}
 {/block}

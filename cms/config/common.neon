@@ -1,5 +1,9 @@
 parameters:
 
+# Register Nittro Latte macros
+latte:
+    macros:
+        - Nittro\Bridges\NittroLatte\NittroMacros
 
 application:
 	errorPresenter: Error

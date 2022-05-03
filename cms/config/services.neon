@@ -1,3 +1,6 @@
+parameters:
+	contactEmail: 'jprace@icloud.com'
+
 security:
 	roles:
 		guest:
@@ -8,9 +11,11 @@ services:
 	- App\Model\CmsManager(picturePath: "%wwwDir%/images/cms")
 	- App\Model\CategoryManager
 	- App\Model\CommentManager
+	- App\Model\ContactManager
 	- App\Forms\FormFactory
 	- App\Forms\SignInFormFactory
 	- App\Forms\SignUpFormFactory
+	- App\FrontModule\Presenters\ContactPresenter(%contactEmail%)
 	router: App\Router\RouterFactory::createRouter
 	authenticator: App\Model\UserManager
 	security.authorizator:
@@ -23,8 +28,11 @@ services:
 			- addResource(Admin:Cms)
 			- addResource(Admin:Article)
 			- addResource(Admin:User)
+			- addResource(Admin:Setting)
 			- allow(admin)
 			- allow(guest, Error)
 			- allow(guest, Admin:Sign)
 			- allow(member, Admin:Sign, out)
 			- allow(member, Admin:Dashboard, default)
+			- allow(member, Admin:Comment)
+			- allow(member, Admin:Article)

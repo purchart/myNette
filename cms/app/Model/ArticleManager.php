@@ -74,7 +74,7 @@ class ArticleManager extends DatabaseManager
             'short_description' => $values['short_description'],
         ];
 
-        if (!empty($values['piscture']) && $values['picture']->isOk()){
+        if (!empty($values['picture']) && $values['picture']->isOk()){
             $articleData['has_picture'] = true;
         }
 
@@ -93,6 +93,7 @@ class ArticleManager extends DatabaseManager
             $this->database->table('article_category')
                 ->where('article_id = ?', $article->id)
                 ->delete();
+            $article_id = $article->id;
         } else {
             $article = $this->database->table(self::TABLE_NAME)
                 ->insert($articleData);
@@ -103,10 +104,10 @@ class ArticleManager extends DatabaseManager
             ];
         }
         if (!empty($values['picture']) && $values['picture']->isOk()){
+            bdump($article_id);
             /** @var Image $im */
             $im = $values['picture']->toImage();
             $im->resize(900, 400, Image::EXACT);
-            bdump($this->picturePath);
             $im->save(sprintf('%s/%d.jpg', $this->picturePath, $article_id), 90, Image::JPEG);
         }
         if (!empty($values['categories'])){
